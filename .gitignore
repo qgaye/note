@@ -1,0 +1,9 @@
+# yu writer backup file
+*.resource
+yufolder.config
+
+# vsocode settings
+.vscode
+
+# mac
+.DS_Store
