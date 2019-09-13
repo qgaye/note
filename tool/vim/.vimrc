@@ -60,10 +60,10 @@ set updatetime=100
 
 call plug#begin('~/.vim/plugged')
 
-" 配色方案
+" ===== Nord配色 =====
 Plug 'arcticicestudio/nord-vim'
 
-" 状态栏
+" ===== 状态栏 =====
 Plug 'itchyny/lightline.vim'
 let g:lightline = {
       \ 'colorscheme': 'nord',
@@ -76,65 +76,121 @@ let g:lightline = {
       \ },
       \ }
 
-" vim顶部tab显示
+" ===== 顶部tab栏 =====
 Plug 'bagrat/vim-buffet'
 
-" 缩进线
+" ===== 缩进线 ======
 Plug 'Yggdroot/indentLine'
 let g:indentLine_char = '|'
 
-" vim中git集成命令 Gdiff
+" ===== git集成命令 Gdiff =====
 Plug 'tpope/vim-fugitive'
 
-" git状态
+" ===== git状态显示 =====
 Plug 'airblade/vim-gitgutter'
 
-" 彩虹括号
+" ===== git lg =====
+Plug 'junegunn/gv.vim'
+
+" ===== 彩虹括号 =====
 Plug 'luochen1990/rainbow'
 let g:rainbow_active = 1
 
-" 代码高亮
+" ===== 代码高亮 =====
 Plug 'justinmk/vim-syntax-extra'
 
-" 文件夹树状结构显示
+" ===== 树状文件夹 =====
 Plug 'scrooloose/nerdtree'
+" 修改树的显示图标
+let g:NERDTreeDirArrowExpandable = '▶'
+let g:NERDTreeDirArrowCollapsible = '▼'
+let NERDTreeAutoCenter=1
+" 在终端启动vim时，共享NERDTree
+let g:nerdtree_tabs_open_on_console_startup=1
+" 显示隐藏文件
+let g:NERDTreeHidden=1
 " 快捷键F2
 map <F2> :NERDTreeToggle<CR>
 
-" 代码结构
+" ===== 文件树git支持 =====
+Plug 'Xuyuanp/nerdtree-git-plugin'
+" NERDTree-git提示
+let g:NERDTreeIndicatorMapCustom = {
+    \ "Modified"  : "✹",
+    \ "Staged"    : "✚",
+    \ "Untracked" : "✭",
+    \ "Renamed"   : "➜",
+    \ "Unmerged"  : "═",
+    \ "Deleted"   : "✖",
+    \ "Dirty"     : "✗",
+    \ "Clean"     : "✔︎",
+    \ "Unknown"   : "?"
+    \ }
+
+" ===== NERDTree高亮 =====
+Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
+
+" ===== NERDTree图标 =====
+Plug 'ryanoasis/vim-devicons'
+
+" ===== 代码结构显示 =====
 Plug 'majutsushi/tagbar'
 " 快捷键F8
-let g:tagbar_width=35
+nmap <F8> :TagbarToggle<CR>
+let g:tagbar_width=40
 let g:tagbar_autofocus=1
 let g:tagbar_left = 0
-nmap <F8> :TagbarToggle<CR>
 
-" 括号帮助
+" ===== 括号补全 =====
 Plug 'jiangmiao/auto-pairs'
 
-" 注释
+" ===== 注释 =====
 " <leader>cc 注释单行
 " <leader>cs 美化注释
 " <leader>cu 取消注释
 Plug 'scrooloose/nerdcommenter'
 
-" 在iterm2中正确显示光标样式
+" ===== 在iterm2中正确显示光标样式 =====
 Plug 'sjl/vitality.vim'
 
-" vim启动界面
+" ===== vim启动界面 ===== 
 Plug 'mhinz/vim-startify'
 
-" 智能提示
+" ===== 智能提示 =====
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+" 在开启500ms后启动
+let g:coc_start_at_startup=0
+function! CocTimerStart(timer)
+    exec "CocStart"
+endfunction
+call timer_start(500,'CocTimerStart',{'repeat':1})
+" 大于0.5M文件禁用coc补全
+let g:trigger_size = 0.5 * 1048576
 
-" 模糊搜索
+augroup hugefile
+  autocmd!
+  autocmd BufReadPre *
+        \ let size = getfsize(expand('<afile>')) |
+        \ if (size > g:trigger_size) || (size == -2) |
+        \   echohl WarningMsg | echomsg 'WARNING: altering options for this huge file!' | echohl None |
+        \   exec 'CocDisable' |
+        \ else |
+        \   exec 'CocEnable' |
+        \ endif |
+        \ unlet size
+augroup END
+
+" ===== 模糊搜索 =====
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 
+" ===== Emoji补全 =====
+Plug 'rhysd/github-complete.vim'
+
 call plug#end()
 
-" 设置Prettier命令
-command! -nargs=0 Prettier :CocCommand prettier.formatFile
+" 设置Format命令
+command! -nargs=0 Format :CocCommand prettier.formatFile
 
 " 设置配色
 colorscheme nord
