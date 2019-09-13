@@ -65,6 +65,32 @@ call plug#end()
 - [coc.nvim](https://github.com/neoclide/coc.nvim) vim自动补全
 - [github-complete.vim](https://github.com/rhysd/github-complete.vim) emoji补全
 
+### coc.nvim插件
+
+[coc.nvim](https://github.com/neoclide/coc.nvim)更好的智能补全
+
+#### coc.ncim配置文件
+
+- 在nvim中使用`CocConfig`打开
+- 其配置文件位置为`~/.config/nvim/coc-settings.json`
+
+#### coc.nvim自带插件
+
+使用`CocInstall`安装插件、`CocUninstall`卸载插件、`CocList`查看已安装插件
+
+- `coc-json`
+- `coc-html`
+- `coc-css`
+- `coc-yaml`
+- `coc-prettier`
+- [更多插件](https://www.npmjs.com/search?q=keywords%3Acoc.nvim)
+
+#### coc.nvim中Language Servers
+
+[coc.nvim中安装Language Servers](https://github.com/neoclide/coc.nvim/wiki/Language-servers)
+
+> 注：有些Language Servers安装后并不在全局环境中，因此可以在`.bashrc`中添加，也可以在config文件中的`command`属性改为命令的绝对路径
+
 ### `Vim-Plug`管理插件命令
 
 - `:PlugInstall` 安装插件
