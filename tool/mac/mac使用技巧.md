@@ -142,3 +142,16 @@ defaults delete com.apple.desktopservices DSDontWriteNetworkStores
 ```bash
 sudo find / -name ".DS_Store" -depth -exec rm {} \;
 ```
+
+## 权限列表中的@
+
+@表示文件或目录有额外属性，例如mac从网上下载个文件有时会提示“此文件来自网络下载不安全”时，就是这个属性起作用了
+
+从mac下copy文件到linux系统上时会因为这个属性造成在linux下打不开的错误，必须删除属性
+
+```bash
+# 查看属性
+xattr -l [FILE]
+# 删除属性
+xattr -c [FILE]
+```
