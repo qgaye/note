@@ -83,6 +83,7 @@ call plug#end()
 - `coc-css`
 - `coc-yaml`
 - `coc-prettier`
+- `coc-tabnine`
 - [更多插件](https://www.npmjs.com/search?q=keywords%3Acoc.nvim)
 
 #### coc.nvim中Language Servers

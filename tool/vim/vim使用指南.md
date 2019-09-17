@@ -153,6 +153,12 @@
 - `:b [file]` 切换到文件为file的缓冲区
 - `bdelete [file]` 删除指定文件缓冲区
 
+## 折行
+
+- `zf` 创建折行
+- `zfa{`折叠大括号内所有内容
+- `zo` 打开折行
+
 ![vim键位图](../pics/vim_keyboard.png)
 
 ![CheetSheet](../pics/Vim_cheat_sheet.png)
