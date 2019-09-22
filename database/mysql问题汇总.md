@@ -1,4 +1,4 @@
-# Mysql中的小问题
+# MySQL问题汇总
 
 ## 1. 如何修改`auto_increment`的值?
 
@@ -51,3 +51,14 @@ ALTER TABLE [TABLE_NAME] COMMENT 'NEW_COMMENT';
 ## 4. 在WorkBench中生成ERR图
 
 在`WorkBench`中选择`Database -> Reverse Engineer`，选择待生成的数据库，生成ERR图
+
+## 5. 修改mysql数据存储路径
+
+修改Mysql根目录下自定义的`my.ini`，保存时必须使用`ASCII`格式保存，将其中的`datadir`设置为自定义的路径
+
+```mysql
+[mysqld]
+datadir=%PATH%
+```
+
+最后重启并使用`mysqld --initialize`初始化数据库文件
