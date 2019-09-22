@@ -366,6 +366,18 @@ func adder() func(int) int {
 
 当使用`a := adder()`接受了返回的函数时，也返回了这个函数的环境，即`sum`这个变量会一直跟随着函数
 
+## panic
+
+`panic`类似于`exception`，但我们应该尽可能处理`panic`
+
+- 停止当前函数执行
+- 一直向上返回，执行每一层`defer`
+- 没有遇到`recover`，程序退出
+
+可预料到的使用`error`，运行时的使用`panic`
+
+使用`defer + recover + panic`处理错误，并使用`Type Assertion`对错误进行分别处理
+
 ## defer
 
 - `defer`修饰的语句调用时机是在外层函数设置返回值之后, 并且在即将返回之
@@ -383,3 +395,19 @@ func hello() (r int) {
     return r
 }
 ```
+
+## recover
+
+- 必须在`defer`调用中使用
+- 获取`panid`的值
+- 如果无法处理，可再次`panic`
+
+```go
+defer func() {
+    if r := recover(); r != nil {
+        ...
+    }
+}()
+```
+
+在`defer`中用匿名函数来使用`recover`，注意，一定要在最后加上括号调用它
