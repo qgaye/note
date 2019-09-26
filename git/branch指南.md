@@ -37,3 +37,9 @@ git branch -d [branch]  # 删除branch分支
 git push origin --delete [branch]  # 删除远程分支branch
 git push origin :[branch]  # 删除远程分支branch 
 ```
+
+## 分支重命名
+
+```bash
+git branch -m [old] [new]
+```
