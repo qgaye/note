@@ -190,7 +190,7 @@ sum2 acc (x:xs) = sum2 (acc + x) xs
 ### 左折叠
 
 ```haskell
-foldl (+) 0             (1:2:[])
+foldl (+)  0            (1:2:[])
 foldl (+) (0 + 1)       (2:[])
 foldl (+) ((0 + 1) + 2) []
 ((0 + 1) + 2)
