@@ -21,7 +21,6 @@
 
 ## 强力推荐
 
-- [YuWriter](https://ivarptr.github.io/yu-writer.site/) - 最好用的markdown编辑器
 - [Alfred4](https://www.alfredapp.com/) - 强大的启动器
 - [IINA](https://iina.io/) - 视频播放器
 - [Dash](https://kapeli.com/dash) - API文档查阅
@@ -29,12 +28,12 @@
 - [Mounty](https://mounty.app/) - 挂载NTFS
 - [Postman](https://www.getpostman.com/) - API调试，http测试
 - [ShadowsocksX-NG](https://github.com/shadowsocks/ShadowsocksX-NG) - SSR
+- [V2rayU](https://github.com/yanue/V2rayU) - V2ray
 - [SlowQuitApps](https://github.com/dteoh/SlowQuitApps) - 为Command+Q设置一个时间
 - [LyricsX](https://itunes.apple.com/cn/app/lyricsx/id1254743014?mt=12) - 动态展示Apple Music歌词
 - [Cakeberw](https://www.cakebrew.com/) - 查看homebrew包
-- [ndm](https://720kb.github.io/ndm/) - 查看npm包
 - [AppCleaner](https://freemacsoft.net/appcleaner/) - 干净的卸载Mac下软件
-- [typora](https://typora.io/) - 及时预览的markdown编辑器
+- [marktext](https://github.com/marktext/marktext) - 及时预览的markdown编辑器
 - [VirtualBox](https://www.virtualbox.org/) - 虚拟机
 - [WireShark](https://www.wireshark.org/) - 抓包工具
 
@@ -44,6 +43,9 @@
 - [Keka](https://www.keka.io/en/) - 解压缩软件
 - [OneDrive](https://itunes.apple.com/cn/app/onedrive/id823766827?mt=12) - OneDrive
 - [coconutbattery](https://www.coconut-flavour.com/coconutbattery/) - 查看电池健康
+- [YuWriter](https://ivarptr.github.io/yu-writer.site/) - markdown编辑器
+- [typora](https://typora.io/) - 及时预览的markdown编辑器
+- [ndm](https://720kb.github.io/ndm/) - 查看npm包
 
 ## SetApp中推荐软件
 

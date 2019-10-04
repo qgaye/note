@@ -19,6 +19,6 @@
 | `Nord` | 配色 |
 | `REST Client` | 在vscode中发送http请求 |
 | `Todo Tree` | 展示项目中的TODO |
-| `Verdandi Theme` | 图标 |
+| `file-icons` | 图标 |
 | `Vim` | vim |
 | `WakaTime` | 记录coding时间 |
