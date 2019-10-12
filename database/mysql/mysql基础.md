@@ -1,6 +1,6 @@
 # MySQL基础
 
-## SQL何执行流程
+## SQL执行流程
 
 ![mysql基本架构示意图](../pics/mysql_sql_execute.png)
 
@@ -321,6 +321,8 @@ change buffer应用在非唯一普通索引页(non-unique secondary index page)�
 
 在MySQL后台会将change buffer里相应的数据持久化到ibdata
 
+使用change buffer机制是不会造成数据库异常导致数据丢失的，虽然是只更新内存，但是在事务提交的时候，我们把change buffer的操作也记录到redo log里了，所以崩溃恢复的时候，change buffer也能找回来
+
 merge的执行流程:
 
 1. 从磁盘读入数据页到内存（老版本的数据页）
@@ -332,4 +334,61 @@ merge的执行流程:
 - 所有更新操作都必须立刻写入redo log进行持久化；只有非唯一普通索引的更新，且数据页未加载到内存时才写入change buffer，并且redo log还需写入
 - redo log在磁盘中的，所有记录都必须立刻写入磁盘；change log是在内存中的，只是在后台会将其持久化到磁盘
 - redo log将随机写记录到磁盘中的IO操作转成顺序写入redo log中；change buffer将随机读磁盘的指定记录的IO操作转为先写入内存，后批量写入
+
+### 错选索引
+
+在优化器中MySQL会自动选择语句执行使用的索引，但有时候会选错索引导致语句执行缓慢
+
+#### 优化器是怎么挑选索引的
+
+优化器通过扫描行数、临时表、是否排序等因素进行综合判断
+
+使用explain查询语句中的rows代表着MySQL预计的扫描行数，扫描行数越小代表访问磁盘的数据量和次数也越少
+
+#### 举个例子
+
+首先创建一张(id, a, b)的表T，其中包含(0, 0, 0)到(10W, 10W, 10W)的数据，且id，a，b都建了索引
+
+| 事务A | 事务B | 事务C |
+| :-: | :-: | :-: |
+| | | select * from t where a between 10000 and 20000 |
+| start transaction with consistent snapshot | |
+| | delete from T | |
+| | 重新插入0-10W的数据 | |
+| | select * from t where a between 10000 and 20000 | |
+| commit | | |
+
+当使用explain查询事务C中的select语句能发现使用的是索引a，预计rows为1W，表示通过索引a扫描1W行，毫无疑问优化器选择是正确的 
+
+但当有了事务A后，事务B执行相同的select语句却使用了索引id，扫描的行数为10W。
+
+首先使用`explain`来看一下使用id索引和a索引扫描的行数，可以发现id索引扫描行数为10W(扫描整表)，a索引扫描行数为3W([为什么是3W](#为什么需要事务A))，而使用a索引还需要再到主索引树中找到具体数据，因此还有额外代价，因此MySQL权衡后选择了使用id索引
+
+此时使用`analyze table T`来重新统计索引，即可让MySQL作出正确判得到a索引的扫描行数为1W
+
+> 在使用`show index`查看表索引信息时基数(cardinality)字段表明索引的区分度，区分度越大越好。基数不是通过遍历整个索引树，而是随机选择N个数据页，计算平均值后乘以总页数得到基数。基数在数据库更新到超过一定行后触发重新做一次索引统计
+
+#### 为什么需要事务A
+
+当没有事务A时事务B中的select语句和事务C中预计的rows是一样的1W，这是因为MySQL是使用标记删除来删除记录的,并不从索引和数据文件中真正的删除。如果delete和insert操作之间间隔较小，change buffer还没来得几merge记录，此时如果主键相同，新插入的数据会沿用删除前的记录空间，由于数据量相同所以预计的rows也相同
+
+而当有事务A时，为了保证事务A的一致性视图，所以事务B添加时不再能够使用原本删除的空间，只能另起空间，所以虽然delete删除了数据但未释放空间，而insert又新增了空间，导致a索引树上数据就变成了两份，因此此时事务B的预计rows变成3W
+
+只要避免长事务就可以避免这种索引统计错误(因为事务A就是长事务)
+
+#### 再举个例子
+
+`select * from t where (a between 1 and 1000) and (b between 50000 and 100000) order by b limit 1`
+
+理论上使用a索引只要扫描1千条(0~1000)，而b索引则需要5W(50000～100000)，但是MySQL会选择使用b索引，因为这里有个`order by b`，b索引中已经按b做了排序，所以MySQL认为使用b索引性能更好
+
+这里可以使用`order by b, a`这种巧妙的方法来让MySQL使用a索引，因为a，b都需要排序，那么MySQL就会选择扫描行数最少的索引了
+
+#### 总结一下解决方法
+
+- 使用`analyze table T`让MySQL重新统计索引
+- 使用`force index(I)`来强行使用指定索引
+- 新增或重建索引
+
+### 字符串索引
 
