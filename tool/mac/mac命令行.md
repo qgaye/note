@@ -30,3 +30,4 @@
 | tmux | 终端分屏 | [GitHub](https://github.com/tmux/tmux) |
 | mycli | 增强版mysql终端 | [GitHub](https://github.com/dbcli/mycli) |
 | autojump | 跳转到指定目录 | [GitHub](https://github.com/wting/autojump) |
+| unrar | 解压rar文件 | `brew install unrar` |
