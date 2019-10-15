@@ -67,10 +67,32 @@ MySQL整体来看有两层，引擎层中InnoDB引擎负责管理redo log，而�
 
 ![binlog和redolog记录流程](../pics/mysql_update_execute.png)
 
-可以发现在最后三步中将redo log拆分为了prepare和commit两个阶段，其实本质就是将redo log包装成事务，确保redo log和bin log同时写入，防止使用bin log恢复数据库的状态和现有数据库状态不一致
+可以发现在最后三步中将redo log拆分为了prepare和commit两个阶段，这里的commit不是指事务的commit，而是确保redo log和bin log同时写入的一个步骤(可以理解为redo log有prepare和commit两个状态，其作用和事务相同)。其作用是为了防止使用bin log恢复数据库的状态和现有数据库状态不一致
 
 - 先写redo log后写bin log：redo log写入后即使数据库奔溃，数据也能正常恢复进数据库，但是当通过bin log恢复数据库时，由于bin log未被写入，因此恢复出来的数据库会比现有数据库状态少上那一条
 - 先写bin log后写redo log：当通过bin log恢复数据库时，未被持久化到数据库的数据也会被恢复(redo log没写入，因此数据库没有这条数据)
+
+### 异常重启与两个日志
+
+1. 在写入redo log 处于prepare阶段之后、写binlog之前发生崩溃
+
+此时redo log还未提交，bin log还没写入。在恢复时，这个事务会回滚，而bin log没写，因此也不会传到备库
+
+2. 在bin log写完，redo log还没commit前发生奔溃
+
+此时bin log是完整的，而redo log处在完整的prepare阶段。在恢复时，直接提交事务
+
+### 崩溃恢复时的判断规则
+
+- 如果redo log里面的事务是完整的，也就是已经有了commit标识，则直接提交
+- 如果redo log里面的事务只有完整的prepare，则判断对应的事务bin log是否存在并完整，完整就提交，不完整就回滚
+
+### 两个日志关联
+
+它们有一个共同的数据字段，叫XID。崩溃恢复的时候，会按顺序扫描redo log：
+
+- 如果碰到既有prepare、又有commit的redo log，就直接提交
+- 如果碰到只有parepare、而没有commit的redo log，就拿着XID去bin log找对应的事务
 
 ## 浅讲事务隔离级别
 
