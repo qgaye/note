@@ -46,6 +46,9 @@
 - [YuWriter](https://ivarptr.github.io/yu-writer.site/) - markdown编辑器
 - [typora](https://typora.io/) - 及时预览的markdown编辑器
 - [ndm](https://720kb.github.io/ndm/) - 查看npm包
+- [Tor Browser](https://www.torproject.org/) - Tor暗网浏览器
+- [Inpaint](https://apps.apple.com/cn/app/inpaint/id1348772840?mt=12) - 去水印
+- [iHex](https://apps.apple.com/cn/app/ihex-hex-editor/id909566003?mt=12) - 查看二进制文件
 
 ## SetApp中推荐软件
 
@@ -92,6 +95,7 @@
 - [QQ](https://itunes.apple.com/cn/app/qq/id451108668?mt=12) - QQ
 - [微信](https://itunes.apple.com/cn/app/%E5%BE%AE%E4%BF%A1/id836500024?mt=12) - 微信
 - [钉钉](https://itunes.apple.com/cn/app/%E9%92%89%E9%92%89/id1435447041?mt=12) - 钉钉
+- [Telegram](https://telegram.org/) - Telegram
 
 ## 屏保
 

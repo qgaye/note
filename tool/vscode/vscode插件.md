@@ -9,6 +9,7 @@
 | `Code Runner` | 运行py，js等文件 |
 | `Docker` | docker插件 |
 | `filesize` | 在状态栏中显示当前文件大小 |
+| `hexdump for VSCode` | 查看二进制文件 |
 | `Git Graph` | git log历史图 |
 | `GitLens` | 更好的git支持 |
 | `Guides` | 代码对齐辅助线 |
