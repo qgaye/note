@@ -617,4 +617,47 @@ MySQL是通过row id来定位一行数据的
 
 在进行随机排序时，MySQL不但会进行排序，还会使用到临时表。`order by rand()`使用了内存临时表，内存临时表排序的时候使用了rowid排序方法
 
+## 怎么不走索引了
+
+### 1. 索引参与了计算
+
+举例：取id + 1 = 2的记录
+
+`select * from T where id + 1 = 2` => 不走id索引，因为id参与了计算
+`select * from T where id = 2 - 1` => 走id索引
+
+### 2. 索引参与函数运算
+
+对索引字段做函数操作，可能会破坏索引值的有序性，因此优化器就决定放弃走树搜索功能
+
+举例：取第七个月的所有记录
+
+`select * from T where month(datetime) = 7` => 不走datetime索引，因为datetime进行了函数运算
+`select * from T where datetime >= '2019-7-1' and datetime <= '2019-7-31'` => 走datetime索引
+
+### 3. 隐式类型转换
+
+举例：id是varchar类型，取id = 100的记录
+
+`select * from T where id = 100` => 不走id索引，其等效于`where CAST(id AS signed int) = 100`，等于是对索引进行函数运算
+`select * from T where id = '100'` => 走id索引
+
+> 如果`select '10' > 9`返回1表示将字符串转成数字进行比较，返回0则表示将数字转成字符串进行比较
+
+### 4. 隐式字符编码转换
+
+举例：两张表字符编码分别为utf8和utf8mb4
+
+`select * from A, B where A.id = B.id` => 不走id索引，其等效于`where CONVERT(A.id.value USING utf8mb4) = B.id`，等于是对索引进行了函数运算
+`select * from A, B where A.id = CONVERT(B.id.value USING utf8)` => 走id索引
+
+**总结：索引字段不能进行函数操作，但是索引字段的参数可以函数操作**
+
+### 5. 不满足最左前缀索引
+
+举例：寻找id包含关键词的记录
+
+`select * from T where id like '%key%'` => 不走id索引，不满足最左前缀索引
+`select * from T where id like 'key%'` => 走id索引
+
 ## 
