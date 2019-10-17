@@ -315,6 +315,12 @@ MySQL行锁是由引擎实现的，InnoDB引擎支持行锁而MyISAM引擎就不
 - 可重复读(RR)：在事务开启时创建一致性视图，该事务所使用的所有数据都来自于此时的一致性视图
 - 提交读(RC)：在每个语句执行前创建一致性视图，该语句用到的数据都来自于该语句创建的一致性视图
 
+### 相同的更新
+
+当给一个`(id = 1, a = 2)`的执行更新语句`update T set a = 2 where id = 1`时，MySQL不会因为更新的a的值和原先a的值相同而不更新，而是会老老实实的执行，该加锁的加锁，该更新的更新
+
+MySQL这里很傻的更新了相同的值，这是因为MySQL这里无法判断a = 2，只能得到id = 1，因此如果`update T set a = 2 where id = 1 and a = 2`，此时将不会执行
+
 ## 再谈索引
 
 ### 普通索引和唯一索引
@@ -551,4 +557,64 @@ count(字段)不包含该字段为null的行，而其余的都包含为null的�
 
 优化器只对count(*)进行了优化，对于其他那些一定为非空的并没有做优化，因此在使用时尽量使用count(*)
 
-##
+## order by
+
+在使用`explain`命令查看执行情况中`extra`字段中`Using filesort`表示是需要排序的。MySQL会给每个线程分配一块内存用于排序，称为`sort_buffer`
+
+接下来以`select id, name, age, school from student where age = 18 order by name limit 10000`举例
+
+### 全字段排序
+
+1. 初始化sort_buffer，确定放入id, name, age, school四个字段
+2. 从age索引中找到满足age = 18条件的主键id
+3. 到主索引中通过id取出整行，并取出id, name, age, school四个字段放入sort_buffer
+4. 从age索引中取下一个记录的主键id
+5. 重复3，4步直到age不满足18的条件(如果不存在age索引，就遍历整个主索引，找到满足条件的记录放入sort_buffer)
+6. 对sort_buffer中的数据按照字段name做快速排序
+7. 按照排序结果取前10000行返回给客户端
+
+内存中的sort_buffer大小是有限的(通过`sort_buffer_size`设定)，当sort_buffer无法一次性载入所有待排序的数据时，就需要使用到临时文件。MySQL将需要排序的数据分成12份(`number_of_tmp_files`)，每一份单独排序(归并排序)后存在这些临时文件中,然后把这12个有序文件再合并成一个有序的大文件
+
+### row id排序
+
+在全字段排序中，可能数据行数并不大，但是由于每条记录的字段过多，导致单行过长，使得在sort_buffer中存储的记录就变得很少
+
+`max_length_for_sort_data`参数是MySQL中专门控制用于排序的行数据的长度的，如果单行的长度超过这个值，MySQL就认为单行太大，替换为row id排序，即在sort_buffer中只保存主键id和待排序字段
+
+1. 初始化sort_buffer，确定放入两个字段，即name和id(只保存主键id和待排序字段name)
+2. 从age索引中找到满足age = 18条件的主键id
+3. 到主索引中通过id取出整行，并取出id, name两个字段放入sort_buffer
+4. 从age索引中取下一个记录的主键id
+5. 重复3，4步直到age不满足18的条件(如果不存在age索引，就遍历整个主索引，找到满足条件的记录放入sort_buffer)
+6. 对sort_buffer中的数据按照字段name做快速排序
+7. 遍历排序结果，取前10000行，并按照id的值回到原表中取出id, name, age, school四个字段返回给客户端
+
+在row id排序中会比全字段排序多一次回表查询(即第7步)
+
+对于InnoDB表来说，row id排序会要求回表多造成磁盘读，因此不会被优先选择(后面提到的内存表中由于回表操作也是访问内存，反而选择row id排序)
+
+MySQL是通过row id来定位一行数据的
+- 对于有主键的InnoDB表来说，这个row id就是主键ID
+- 对于没有主键的InnoDB表来说，其会自己生成一个长度为6字节的row id
+- Memeory引擎不是索引组织表，可以理解为数组下表作为了row id
+而这row id也正是row id排序的由来
+
+### 索引排序
+
+由于索引是一棵B+树，其本身就是递增排序的，因此如果待排序的字段存在索引，那么就无法再做排序了
+
+首先先创建一个联合索引(age, name)，从而保证age可以通过最左前缀匹配，而name又是被排序好的
+1. 从索引(age, name)中找到第一个满足条件的age = 18的主键id
+2. 到主索引中通过id取出该行，并返回id, name, age, school四个字段作为结果集的一部分直接返回
+3. 从索引(age, name)中取出下一个主键id
+4. 重复2，3步，直到查到10000条记录或者不满足age = 18为止
+
+还可以通过覆盖索引来进一步优化，创建(age, name, school)联合索引，省去回表查询的步骤
+
+### 随机排序
+
+当需要随机取出n条记录时，可以使用`order by rand()`来为所有记录进行随机排序
+
+在进行随机排序时，MySQL不但会进行排序，还会使用到临时表。`order by rand()`使用了内存临时表，内存临时表排序的时候使用了rowid排序方法
+
+## 
