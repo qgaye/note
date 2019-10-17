@@ -1,4 +1,4 @@
-# MySQL基础
+# MySQL笔记
 
 ## SQL执行流程
 
