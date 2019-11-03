@@ -67,7 +67,7 @@ datadir=%PATH%
 
 ```sql
 -- 设置隔离级别
-set [GLOBAL | SESSION] transaction [READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE]
+set [GLOBAL | SESSION] transaction isolation level [READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE]
 ```
 
 MySQL中默认隔离级别为REPEATABLE READ
@@ -80,3 +80,30 @@ select @@transaction_isolation;
 ```
 
 在MySQL5.7中使用`tx_isolation`作为`transaction_isolation`的别名，但在8.0中已被弃用
+
+## 查询表和视图
+
+`show tables`会显示当前数据库中的表和视图
+
+`show full tables`会显示结果中的类型，是表(Base Table)还是视图(View)
+
+`show full tables like 'key'`使用关键词查找指定表或视图
+
+## 查看连接
+
+`show processlist`命令来查看当前用户的所有线程(连接)。只有root用户才可以查看所有用户的连接
+
+其中的记录都来自`information_schema.processlist`表
+
+- Id: 线程id
+- User: 线程持有者
+- Host: 连接主机的IP地址
+- db: 使用的数据库
+- Command: 当前执行的命令，如Query，Sleep
+- Time: 消耗时间，单位秒
+- State: 执行状态，如Sending data，Sorting for group
+- Info: 执行的SQL语句
+
+使用`kill [ID]`来杀死指定线程，但是未提交的事务会被回滚
+
+##
