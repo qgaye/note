@@ -63,11 +63,16 @@ MySQL整体来看有两层，引擎层中InnoDB引擎负责管理redo log，而�
 
 ### 两个记录模块记录流程
 
-首先来看一下update操作时bin log和redo log的记录流程，浅色表示在InnoDB中执行，深色表示在执行器中执行
+首先来看一下update操作时bin log和redo log的记录流程，浅色表示在InnoDB中执行，深色表示在Server层中执行
 
 ![binlog和redolog记录流程](../pics/mysql_update_execute.png)
 
-可以发现在最后三步中将redo log拆分为了prepare和commit两个阶段，这里的commit不是指事务的commit，而是确保redo log和bin log同时写入的一个步骤(可以理解为redo log有prepare和commit两个状态，其作用和事务相同)。其作用是为了防止使用bin log恢复数据库的状态和现有数据库状态不一致
+可以发现在最后三步中将redo log拆分为了prepare和commit两个阶段，因为为了确保redo log和bin log必须一同写入，所以MySQL采用了两阶段提交来解决这个问题
+
+1. 第一阶段：InnoDB将该事务回滚段设为prepare状态，并持有prepare_commit_mutex，然后写入redo log，bin log不进行任何操作
+2. 第二阶段：首先写入bin log。接着InnoDB提交该事务(清除undo log，释放锁)，写入commit标记后释放prepare_commit_mutex
+
+> 早期MyQSQL通过prepare_commit_mutex来保证同时提交，但是性能过差且不能同时其他线程不能提交。因此在MySQL5.6后一次引入了bin log组提交和redo log组提交来提升性能
 
 - 先写redo log后写bin log：redo log写入后即使数据库奔溃，数据也能正常恢复进数据库，但是当通过bin log恢复数据库时，由于bin log未被写入，因此恢复出来的数据库会比现有数据库状态少上那一条
 - 先写bin log后写redo log：当通过bin log恢复数据库时，未被持久化到数据库的数据也会被恢复(redo log没写入，因此数据库没有这条数据)
@@ -531,31 +536,25 @@ MySQL会自动新建一个与原表结构相同的临时表，然后按照主键
 
 ### 不同的count用法
 
-1. count(主键id)
+1. count(*)
 
-InnoDB引擎遍历整张表，把每一行的id值都取出来，返回给Server层。Server层拿到id后，判断是不可能为空的，按行累加
+InnoDB对于count(\*)并不会把全部字段取出来，而是专门做了优化，不取值，因为count(\*)肯定不是null，直接按行累加
+
+在遍历时，如果有普通索引就不会选择走主索引。因为主索引上不但有具体数据还有MVCC版本号和加锁的记录，导致主索引往往很大，而count()操作是要遍历整张表的，因此占用空间较小的普通索引相比于主索引需要更少的磁盘IO次数就能读取整个索引，普通索引才是更好的选择
 
 2. count(1)
 
-InnoDB引擎遍历整张表，但不取值。server层对于返回的每一行，放一个数字“1”进去，判断是不可能为空的，按行累加
-
-对比count(主键)来说，其不用从数据行中解析主键id并拷贝到Server层，因此速度更快
+MySQL官方说明count(1)和count(\*)是等效的，仅仅在SQL规范中推荐使用count(\*)
 
 3. count(字段)
 
 InnoDB引擎遍历整张表，把每一行的该字段解析出来并返回给Server层。Server层拿到字段值后，如果该字段是not null的，判断是不可能为空的，按行累加，如果是可以为null的，就还要在将该字段值取出来再做判断，不是null才累加
 
-4. count(*)
-
-InnoDB对于count(*)并不会把全部字段取出来，而是专门做了优化，不取值，因为count(*)肯定不是null，直接按行累加
-
 总结：
 
-count(字段) < count(主键id) < count(1) ≈ count(*)
+count(字段) < count(1) = count(*)
 
 count(字段)不包含该字段为null的行，而其余的都包含为null的行
-
-优化器只对count(*)进行了优化，对于其他那些一定为非空的并没有做优化，因此在使用时尽量使用count(*)
 
 ## order by
 
@@ -787,5 +786,120 @@ InnoDB给每个索引加了一个不存在的最大值+∞，这样next-key lock
 | insert into T (id, name) values (5, 'Alice') => (插入失败) | |
 
 事务A首先查询主键为5的记录，并加上间隙锁。同时事务B也做相同查询并也加上间隙锁。事务A和事务B加的是相同区间的间隙锁，因为间隙锁是不会相互冲突的，因此两事务的间隙锁加锁成功。此时事务B尝试插入主键为5的记录，但很明显事务A的间隙锁阻塞了该操作，并且事务A的插入操作也被事务B的间隙锁阻塞，两个事务进入相互等待的情况，形成死锁
+
+## 再说redo log和bin log
+
+### bin log写入机制
+
+先把日志写到binlog cache(在MySQL线程中，每个线程独立一个binlog cache) -> 再把binlog cache中的write到binlog file(即文件系统上的page cache) -> 最后调用fsync将page cache持久化到磁盘，这一步占用磁盘IOPS(物理磁盘)
+
+![bin log写入流程图](../pics/mysql_binlog_status.png)
+
+注意：事务的bin log必须是顺序的且不能被拆开的，因此必须确保一次性写入
+
+write(写到文件系统的page cache)和fsync(持久化到磁盘)的时机由参数`sync_binlog`控制
+- `sync_binlog = 0` 表示每次提交事务只write不fsync
+- `sync_binlog = 1` 表示每次提交事务都fsync
+- `sync_binlog = N(N>1)` 表示每次提交事务都write，但在N次提交后再fsync
+
+当出现IO瓶颈时，可以将`sync_binlog`设定为一个较大值，从而提升性能。但是如果主机发生异常会丢失最近N个事务bin log日志
+
+### redo log写入机制
+
+redo log和bin log不同，使用MySQL中的redo log buffer来存储所有线程中的redo log。并且redo log也不是必须连续和一次性写入的
+
+![redo log状态图](../pics/mysql_redolog_status.png)
+
+如上图中redo log存在三种状态：
+- 红色部分：存在redo log buffer中，物理上是在MySQL进程内存中
+- 黄色部分：写到文件系统的page cache里(write)，但是没有持久化到磁盘(fsync)
+- 绿色部分：持久化到磁盘(fsync)
+
+InnoDB提供了`innodb_flush_log_at_trx_commit`参数来控制redo log buffer写入策略：
+- `innodb_flush_log_at_trx_commit = 0` 表示每次提交事务只是把redo log留在redo log buffer中
+- `innodb_flush_log_at_trx_commit = 1` 表示每次提交都直接将redo log持久化(fsync)到磁盘
+- `innodb_flush_log_at_trx_commit = 2` 表示每次提交事务都只是把redo log提交到文件系统的page cache中
+
+InnoDB后台有一个线程每隔1秒就将redo log buffer中的数据write到page cache后再调用fsync持久化到磁盘。因此一个还未提交的事务的redo log是很有可能已经被持久化到磁盘中(除了后台线程做的持久化，并行事务提交时还会顺带将其他未提交的事务的redo log也一起fsync)
+
+当`innodb_flush_log_at_trx_commit = 1`时需要每次事务提交时都要将redo log持久化，但又由于InnoDB中redo log先做prepare，再开始记录bin log，因此在prepare阶段就要进行持久化，又因为InooDB中崩溃恢复可以只依赖于prepare阶段的redo log和完整的bin log，因此在redo log的commit阶段就不再必要写入(fsync)磁盘，只write到page cache就足够了
+
+### 双1配置
+
+MySQL中常说的双1配置指的就是`sync_binlog`和`innodb_flush_log_at_trx_commit`两个参数都设置成1。也就是说在一个事务完整提交前会等待两次磁盘持久化，一次是redo log的prepare阶段的持久化，另一个是bin log的持久化
+
+### 组提交
+
+#### redo log组提交
+
+日志逻辑序列号(LSN)：用来对应redo log的每一个写入点，LSN是单调递增的，每次写入长度为N的redo log后，LSN的值就会加上N
+
+当多个并行且都处于prepare状态的事务在写完redo log buffer准备write/fsync时，第一个发出write/fsync请求的事务被选为leader，在写入时带上组事务(即并行的多个事务)中最大的LSN，因此在第一个事务完成写入操作后，实际上比LSN小的redo log也都进行了write/fsync操作，其他并行的事务也就不再需要做写入操作
+
+在并发场景下，第一个事务写完redo log buffer以后，越晚调用fsync，组员就可能更多，更节约磁盘性能
+
+redo log在写入时无需保证一致性(即redo log可以拆分写入)，因此一个还未提交的事务的redo log是很可能被其他提交事务的顺带写入
+
+#### bin log组提交
+
+bin log的存储过程实际上分为write和fsync两步，因此如果在write之后，fsync之前能够等一等，能集合更多的bin log一起持久化，能提升磁盘性能
+
+![bin log组提交流程](../pics/mysql_binlog_group_commit.png)
+
+还可以通过设置`binlog_group_commit_sync_delay`和`binlog_group_commit_sync_no_delay_count`两个参数来提升bin log组提交效果
+- `binlog_group_commit_sync_delay` 表示延迟多少微秒后才调用fsync
+- `binlog_group_commit_sync_no_delay_count` 表示累积多少次以后才调用fsync
+这两个条件是或的关系，即只要满足一个条件就会调用fsync
+
+并且这两个参数的设置不但减少了磁盘的写盘次数，还没有丢失数据的风险，仅仅会增加语句响应时间
+
+#### WAL机制为什么磁盘性能好
+
+- redo log和bin log都是顺序写，顺序写比随机写速度要快
+- 组提交机制，可以大幅度降低磁盘IO次数
+
+### bin log格式
+
+- statement：bin log中记录的就是SQL原文，但是仅仅记录SQL语句会造成在不同库中执行结果不同
+- row：bin log中记录了操作的表，进行的操作和操作的数据，保证了操作的幂等性，但占用大量空间
+- mixed：MySQL自动对bin log选择使用statement或row格式记录(当删除大量数据时，row格式会将所有删除的数据都进行记录，占用空间得不偿失)，且会对某些SQL进行优化。比如插入字段中包括now()函数，不会使用row格式，而是使用statement格式但将函数代替为常量
+
+不管任何格式，在一个事务的bin log记录后都会带上XID，XID是bin log和redo log进行管理的字段
+
+在执行bin log时必须从头执行到尾，不得从中挑选出一部分执行。因为在mixed格式中说到了MySQL会对某些SQL语句进行优化，使得其依赖于上下文的常量，因此截取一部分执行会有可能出错
+
+## 主备一致
+
+有两个数据库，一个是主库，另一个是备库，备库会将主库上的更新都同步过来到本地执行，从而保证两个数据库数据是相同的
+
+![主备流程](../pics/mysql_master_salve.png)
+
+1. 在备库B上通过`change master`命令，设置主库A的IP、端口、用户名、密码，以及要从哪个位置开始请求bin log，这个位置包含文件名和日志偏移量
+2. 在备库B上执行`start slave`命令，这时候备库会启动两个线程，就是图中的io_thread和sql_thread。其中io_thread负责与主库建立连接
+3. 主库A校验完用户名、密码后，开始按照备库B传过来的位置，从本地读取binlog，发给B
+4. 备库B的io_thread拿到bin log后，写到本地文件，称为中转日志(relay log)
+5. 备库B的sql_thread读取中转日志，解析出日志里的命令，并执行
+
+### M-S结构
+
+![M-S结构](../pics/mysql_m_s.png)
+
+这里建议将备库设为只读模式(readonly)
+- 有时候一些运营类的查询语句会被放到备库上去查，设置为只读可以防止误操作
+- 防止切换逻辑有bug，比如切换过程中出现双写，造成主备不一致
+- 可以用readonly状态，来判断节点的角色
+
+即使备库被设置为readonly，但备库的更新线程拥有超级权限，readonly对超级权限无效
+
+### M-M结构
+
+![M-M结构](../pics/mysql_m_m.png)
+
+M-M结构相对于M-S结构来说，两个库之间互为主备关系，因此在切换时就无需再修改主备关系了
+
+`log_slave_updates`参数设置为on时，备库执行执行完主库发来的bin log后也会生成自己的bin log。但这样就存在一个问题，备库生成的bin log再被主库拿去执行，从而造成了循环复制，因此MySQL在bin log中记录了这个命令第一次执行时所在实例的server id来解决这个问题
+- 规定两个库的server id必须不同，如果相同，则它们之间不能设定为主备关系
+- 一个备库接到binlog并在重放的过程中，生成与原binlog的server id相同的新的binlog
+- 每个库在收到从自己的主库发过来的日志后，先判断server id，如果跟自己的相同，表示这个日志是自己生成的，就直接丢弃这个日志
 
 ## 
