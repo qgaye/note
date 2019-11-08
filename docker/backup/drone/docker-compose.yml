@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+    drone:
+        image: drone/drone:latest
+        container_name: drone
+        ports:
+            - 80:80
+        restart: always
+        environment:
+            DRONE_GITHUB: "true"
+            DRONE_GITHUB_SERVER: "https://github.com"
+            DRONE_GITHUB_CLIENT_ID: "00492acbbd9c191b5048"
+            DRONE_GITHUB_CLIENT_SECRET: "" # secret
+            DRONE_RUNNER_CAPACITY: 2
+            DRONE_SERVER_HOST: "ci.qgaye.com"
+            DRONE_SERVER_PROTO: "https"
+            DRONE_ADMIN: "qgaye"
+            DRONE_SECRET: "0601"
+            DRONE_USER_CREATE: "username:qgaye,admin:true"
+            DRONE_USER_FILTER: "qgaye"
+            DRONE_LOGS_PRETTY: "true"
+            DRONE_LOGS_COLOR: "true"
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "/var/lib/drone:/data"

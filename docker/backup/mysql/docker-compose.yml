@@ -1,0 +1,18 @@
+version: '3'
+services:
+    db:
+        image: mysql:8
+        container_name: mysql
+        restart: always
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            MYSQL_ROOT_PASSWORD: '0601'
+            MYSQL_ROOT_HOST: 'localhost' # 表示root用户只能在本机登陆
+            MYSQL_USER: 'qgaye'
+            MYSQL_PASSWORD: '0601'
+        ports:
+            - 3306:3306
+        volumes:
+            - "/root/docker/mysql/data/db:/var/lib/mysql"
+            - "/root/docker/mysql/data/conf:/etc/mysql/conf.d"
+            - "/root/docker/mysql/data/log:/var/log/mysql"
