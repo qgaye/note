@@ -110,3 +110,8 @@ select @@transaction_isolation;
 
 在命令行中查询语句返回语句过长时，可以使用`\G`来代替查询语句中的`;`，此时结果会以纵向排列显示
 
+## 更改表名
+
+```sql
+rename table [old_table] to [new_table]
+```
