@@ -1,3 +1,3 @@
 # Note
 
-一些个人笔记整理
+yi xie ge ren bi ji zheng li
