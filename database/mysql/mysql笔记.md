@@ -1396,6 +1396,14 @@ BNL算法中会对被驱动表做多次全表扫描(因为驱动表可能要分�
 
 虽然MySQL本身不支持hash join，但是可以在业务中来手动实现
 
+### left join
+
+在前面说明了如果需要显式指定驱动表和被驱动表需要使用`straight join`，而使用`left/right join`是无法确定指定驱动表的
+
+在使用`left join`时，如果被驱动表的字段被放在where条件里做等值或不等值判断，因为在MySQL中NULL做任何where判断都是NULL，所以执行完的结果中是不会存在NULL值的，所以此处`left join`就退化为了`join`，那么如果此时驱动表中join后字段有索引，则MySQL优化器会自行选择右边的表作为驱动表
+
+因此如果希望使用`left join`时左边的表一定是驱动表，那么被驱动表中的字段不得放在`where`条件里做等值或不等值判断，必须全部写在`on`里，`right join`同理
+
 ## 临时表
 
 ### 临时表和内存表
@@ -1466,16 +1474,56 @@ select count(name) as c from t1 group by name
 4. 排序完成后得到一个有序数组，因为有序数组中相同的group by后的字段已连续存储，则直接进行统计即可(参照有索引的逻辑)
 
 group by使用原则：
-- 如果对group by语句的结果没有排序要求，要在语句后面加 order by null
-- 尽量让group by过程用上表的索引，确认方法是explain结果里没有Using temporary 和 Using filesort
+- 如果对group by语句的结果没有排序要求，要在语句后面加order by null
+- 尽量让group by过程用上表的索引，确认方法是explain结果里没有Using temporary和Using filesort
 - 如果group by需要统计的数据量不大，尽量只使用内存临时表；也可以通过适当调大tmp_table_size参数，来避免用到磁盘临时表
 - 如果数据量实在太大，使用SQL_BIG_RESULT这个提示，来告诉优化器直接使用排序算法得到group by的结果
+
+#### group by和distinct
+
+```sql
+select id from t1 group by id order by null
+select distinct id from t1
+```
+
+以上两个语句作用是相同的(虽然SQL标准中group by需要使用聚合函数)，并且它们的执行流程也是相同的
+
+1. 创建一个临时表，临时表中有一个字段id，并在id字段上加上唯一索引
+2. 遍历表t1，将数据一次插入临时表中，如果插入发生唯一键冲突，就跳过，否则就插入成功
+3. 遍历完成后将将临时表作为结果集返回客户端
 
 ### 临时表总结
 
 - 如果语句执行过程可以一边读数据，一边直接得到结果，是不需要临时表的，否则就需要临时表来保存中间结果
 - join_buffer是无序数组，sort_buffer是有序数组，临时表是二维表结构
 - 如果执行逻辑需要用到二维表特性，就会优先考虑使用临时表
+
+## 内存表
+
+内存表指的是使用Memory引擎的表，Memory默认使用的是Hash索引，即将索引值进行hash后存储
+
+![Memory引擎表存储结构](../pics/mysql_memory_table.png)
+
+- InnoDB引擎将数据放在主键索引上，其他索引上保存的是主键。这种方式称之为索引组织表(Index Organizied Table)
+- Memory引擎将数据单独存放，而索引上保存的是数据的内存地址。这种方式称之为堆组织表(Heap Organizied Table)
+
+InnoDB与Memory引擎表的不同：
+- InnoDB表的数据是有序存放的，而Memory表的数据就是按照写入顺序存放的
+- 当数据文件有空洞的时候，InnoDB表在插入新数据的时候，为了保证数据有序性，只能在固定的位置写入新值，而Memory表找到空位就可以插入新值
+- 数据位置发生变化的时候，InnoDB表只需要修改主键索引，而Memory表需要修改所有索引
+- InnoDB表用主键索引查询时需要走一次索引查找，用普通索引查询的时候，需要走两次索引查找。而Memory表没有这个区别，所有索引都只需要一次查找
+- InnoDB支持变长数据类型，不同记录的长度可能不同；Memory表不支持Blob和Text字段，并且即使定义了varchar(N)，实际也当作char(N)，也就是固定长度字符串来存储，因此Memory表的每行数据长度相同
+
+但Memory表也是支持B-Tree索引的，使用`using btree(COLUMN)`来创建B-Tree索引，此时Memory表中的范围查找会默认使用B-Tree索引
+
+### 内存表的使用
+
+Memory表不支持行锁，只支持表锁。因此只要该表在更新时，就会堵住该表上的所有其他读写操作
+
+Memeory表在数据库重启后会清空。因此如果从库中重启后Memory表已清空而主库传来的bin log操作了Memory表，会导致操作报错；并且MySQL在数据库重启后，会在bin log中记录`delete from Memory表`的语句，而在M-M架构中会导致从库重启后将这句delete语句传到了主库，将主库好好地Memory表中的所有数据也都清空
+
+又因为InnoDB中Buffer Pool的存在，如果表的数据量不大时也是能够缓存在内存中的，因此**建议使用InnoDB表来代替所有Memory表**，除了在做join时使用的临时表
+
 
 ## 自增主键
 
@@ -1531,3 +1579,9 @@ InnoDB为了防止并行线程获取到相同的自增值，因此会在线程�
 - 插入的数据与唯一索引相冲突
 - 插入数据的事务被回滚
 - MySQL中批量插入的批量分配自增主键策略
+
+TODO: 40-43讲整理
+
+## grant
+
+![grant不同权限](../pics/mysql_flush.png)
