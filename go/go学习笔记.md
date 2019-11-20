@@ -23,11 +23,15 @@ const (
 ## 内建变量类型
 
 - `bool`, `string`
+
 - `(u)int`, ,`(u)int8~64`, `uintptr` 指针
+
 - `byte`, `rune` 4字节的char
+
 - `float32`, `float64`, `complex64`, `complex128`
 
 - **go语言中没有隐式的类型转换，所有都是强制类型转换**
+
 - **go语言中所有类型如果不初始化，都会有zero value**
 
 ## if
@@ -261,7 +265,7 @@ n.value np.value
 
 ```go
 func (n node) print() {
-	fmt.Println(n)
+    fmt.Println(n)
 }
 ```
 
@@ -281,7 +285,7 @@ func (n node) print() {
 - 首字母大写：public
 - 首字母小写：private
 
-##  包
+## 包
 
 - 每个目录一个包
 - main包包含可执行入口

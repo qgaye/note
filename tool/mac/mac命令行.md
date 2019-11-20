@@ -31,3 +31,4 @@
 | mycli | 增强版mysql终端 | [GitHub](https://github.com/dbcli/mycli) |
 | autojump | 跳转到指定目录 | [GitHub](https://github.com/wting/autojump) |
 | unrar | 解压rar文件 | `brew install unrar` |
+| wallpapper | 制作动态壁纸 | [GitHub](https://github.com/mczachurski/wallpapper) |

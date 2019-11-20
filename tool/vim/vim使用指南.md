@@ -164,4 +164,4 @@
 
 ![vim键位图](../pics/vim_keyboard.png)
 
-![CheetSheet](../pics/Vim_cheat_sheet.png)
+![CheetSheet](../pics/vim_cheat_sheet.png)

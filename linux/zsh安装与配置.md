@@ -8,6 +8,14 @@
 
 `Mac` -> 系统自带
 
+## 切换zsh
+
+```bash
+chsh -s /bin/zsh
+```
+
+`chsh command not found`，则安装`util-linux-user`包
+
 ## 安装oh-my-zsh
 
 [oh-my-zsh的GitHub主页](https://github.com/robbyrussell/oh-my-zsh/)
