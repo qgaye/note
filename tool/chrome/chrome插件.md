@@ -3,7 +3,6 @@
 | 插件 | 功能 |
 |:-:|:-:|
 | Chrono | 管理Chrome中的下载，嗅探页面内容 |
-| Material Downloads | 简易下载管理 |
 | SimpleUndoClose | 打开最近删除的页面 |
 | JSON Viewer | 格式化json数据展示 |
 | Octotree | 在侧边栏展示github文件树 |

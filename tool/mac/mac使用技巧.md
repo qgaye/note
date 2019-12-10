@@ -155,3 +155,21 @@ xattr -l [FILE]
 # 删除属性
 xattr -c [FILE]
 ```
+
+## 修改Launchpad中图标个数
+
+默认是5行7列
+
+```bash
+# 修改行数为6
+defaults write com.apple.dock springboard-rows -int 6
+# 修改列数为8
+defaults write com.apple.dock springboard-columns -int 8
+# 重启Launchpad
+killall Dock
+```
+
+```bash
+# 恢复默认设置
+defaults write com.apple.dock springboard-rows Default defaults write com.apple.dock springboard-columns Default killall Dock
+```

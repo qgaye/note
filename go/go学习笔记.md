@@ -24,7 +24,7 @@ const (
 
 - `bool`, `string`
 
-- `(u)int`, ,`(u)int8~64`, `uintptr` 指针
+- `(u)int`, `(u)int8~64`, `uintptr` 指针
 
 - `byte`, `rune` 4字节的char
 
@@ -273,7 +273,7 @@ func (n node) print() {
 
 - 要改变内容必须使用指针接受者
 - 结构过大也考虑使用指针接受者，避免复制值的性能消耗
-- 一致性：如果有指针接受者，最后全都是指针接受者
+- 一致性：如果有指针接受者，最好全都是指针接受者
 
 注意：**两个函数分别是值接受者和指针接受者但是名字相同，但也是不允许的**
 
@@ -403,7 +403,7 @@ func hello() (r int) {
 ## recover
 
 - 必须在`defer`调用中使用
-- 获取`panid`的值
+- 获取`panic`的值
 - 如果无法处理，可再次`panic`
 
 ```go
@@ -415,3 +415,40 @@ defer func() {
 ```
 
 在`defer`中用匿名函数来使用`recover`，注意，一定要在最后加上括号调用它
+
+## Test
+
+- 包含单元测试的go文件名必须以`_test`结尾
+- 单元测试文件与测试的函数所在文件处在同一包中
+- 单元测试的函数名必须以`Test`开头，并是可导出的公开函数
+- 单元测试的函数必须接收一个testing.T类型的指针，并且没有返回值
+
+`go test [path]` 运行单元测试
+`go test [path] -v` 运行单元测试，显示详细信息
+`go test -coverprofile=c.out` 生成单元测试代码覆盖率，使用`go tool cover -html=c.out`在浏览器中查看
+
+## 注释
+
+`go doc [func/file]` 查看文件/函数/变量的文档
+`godoc -http=localhost:6060` 打开本地服务查看文档(`$GOROOT/src/pkg`和`$GOPATH`下的源代码)
+
+为文档添加Example:
+- 必须放在单元测试文件内，即文件必须以`_test`结尾
+- 方法必须以`Example`开头，且不接受任何参数
+- 使用注释`// output:`来标记期望结果，go会自动将函数输出结果与`// output:`后的做比较
+
+```go
+func ExampleMyAdd() {
+    fmt.Println(MyAdd(1, 2))
+    // output:
+    // 3
+}
+```
+
+## import
+
+go代码初始化流程：先加载import包，然后依次`const -> var -> init()`顺序初始化
+
+- `import myfmt "fmt"`表示给fmt包启用了别名myfmt，使用myfmt代替fmt作为包名来调用函数
+- `import . "fmt"`表示fmt包下的函数变量可以直接使用，无需使用fmt包名
+- `import _ "fmt"`表示会默认执行fmt包中的所有init函数，但无法调用fmt包中的函数
