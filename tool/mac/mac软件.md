@@ -29,6 +29,7 @@
 - [Postman](https://www.getpostman.com/) - API调试，http测试
 - [ShadowsocksX-NG](https://github.com/shadowsocks/ShadowsocksX-NG) - SSR
 - [V2rayU](https://github.com/yanue/V2rayU) - V2ray
+- [ClashX](https://github.com/yichengchen/clashX) - Clash的Mac客户端
 - [SlowQuitApps](https://github.com/dteoh/SlowQuitApps) - 为Command+Q设置一个时间
 - [LyricsX](https://itunes.apple.com/cn/app/lyricsx/id1254743014?mt=12) - 动态展示Apple Music歌词
 - [Cakeberw](https://www.cakebrew.com/) - 查看homebrew包
@@ -49,6 +50,11 @@
 - [Tor Browser](https://www.torproject.org/) - Tor暗网浏览器
 - [Inpaint](https://apps.apple.com/cn/app/inpaint/id1348772840?mt=12) - 去水印
 - [iHex](https://apps.apple.com/cn/app/ihex-hex-editor/id909566003?mt=12) - 查看二进制文件
+- [Kitematic](https://kitematic.com/) - docker官方图形化管理界面
+- [SF Symbols](https://developer.apple.com/design/human-interface-guidelines/sf-symbols/overview/) - SwiftUI图表库
+- [Caffeinated](https://apps.apple.com/cn/app/caffeinated-%E9%98%B2%E4%BC%91%E7%9C%A0%E5%BA%94%E7%94%A8/id1362171212?mt=12) - 阻止电脑睡眠
+- [AnotherRedisDesktopManager](https://github.com/qishibo/AnotherRedisDesktopManager) - redis图形化界面
+- [Medis](https://github.com/luin/medis) - redis图形化界面 
 
 ## SetApp中推荐软件
 

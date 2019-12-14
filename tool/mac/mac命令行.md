@@ -32,3 +32,6 @@
 | autojump | 跳转到指定目录 | [GitHub](https://github.com/wting/autojump) |
 | unrar | 解压rar文件 | `brew install unrar` |
 | wallpapper | 制作动态壁纸 | [GitHub](https://github.com/mczachurski/wallpapper) |
+| iredis | 增强版redis终端 | [GitHub](https://github.com/laixintao/iredis) |
+| onefetch | 展示git项目概要 | [GitHub](https://github.com/o2sh/onefetch) |
+| ctop | docker管理工具 | [GitHub](https://github.com/bcicen/ctop) |

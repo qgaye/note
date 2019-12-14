@@ -1,0 +1,20 @@
+version: '3'
+services:
+  rabbitmq1:
+    image: "rabbitmq:3-management"
+    hostname: "rabbit"
+    container_name: "rabbitmq"
+    restart: always
+    environment:
+      # RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+      RABBITMQ_DEFAULT_USER: "qgaye"
+      RABBITMQ_DEFAULT_PASS: "0601"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+      - "5672:5672"
+      - "4369:4369"
+      - "15672:15672"
+      - "25672:25672"
+    volumes:
+      - "./data:/var/lib/rabbitmq/"
+      - "./log/:/var/log/rabbitmq/"

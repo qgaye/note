@@ -173,3 +173,8 @@ killall Dock
 # 恢复默认设置
 defaults write com.apple.dock springboard-rows Default defaults write com.apple.dock springboard-columns Default killall Dock
 ```
+
+## 打开不受信任的软件
+
+1. 在设置的安全性与隐私中在允许从以下位置下载的APP中选择任何来源
+2. 若选择任何来源后无效，则在Finder中软件处按住Control单击软件，点击打开
