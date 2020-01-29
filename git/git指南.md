@@ -81,6 +81,8 @@ git rm [file]    # 修改会直接影响暂存区
 git commit -m "update info"  
 # 将工作空间的文件(已被追踪的)跳过暂存区直接提交到仓库
 git commit -a    
+# 对指定文件或文件夹进行提交
+git commit [file/folder] -m "update info"
 ```
 
 ### 修改最近一次的提交
@@ -208,6 +210,12 @@ git stash pop
 ```
 
 > `git stash apply`在应用储藏时，即使先前已经在暂存区中的文件是不会应用到暂存区的，只会在工作区，若要同时应用到暂存区，需使用`--index`参数
+
+## 找到被删除的对象
+
+```bash
+git fsck --unreachable
+```
 
 ## `Git`命令流程
 

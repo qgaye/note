@@ -11,6 +11,7 @@ git branch  # 列出所有本地分支
 git branch -r   # 列出所有远程分支
 git branch -a  # 列出所有本地和远程的分支
 git branch -v  # 显示分支最近一次的commit信息
+git branch -vv  # 在-v的基础上显示对应的云上分支
 ```
 
 ## 切换分支
@@ -42,4 +43,15 @@ git push origin :[branch]  # 删除远程分支branch
 
 ```bash
 git branch -m [old] [new]
+```
+
+## 删除多余的fetch的remote的分支
+
+将本地与远程分支清除后，使用`git branch -a`还是能看到一些`remote...`的分支存在
+
+此时需要使用`git remote prune`命令来删除
+
+```bash
+git remote show [remote name]
+git remote prune [remote name]
 ```
