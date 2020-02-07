@@ -35,3 +35,6 @@
 | iredis | 增强版redis终端 | [GitHub](https://github.com/laixintao/iredis) |
 | onefetch | 展示git项目概要 | [GitHub](https://github.com/o2sh/onefetch) |
 | ctop | docker管理工具 | [GitHub](https://github.com/bcicen/ctop) |
+| fx | json终端展示 | [GitHub](https://github.com/antonmedv/fx) |
+| lazygit | git图形化管理工具 | [GitHub](https://github.com/jesseduffield/lazygit) |
+| scrcpy | 在电脑上同步显示安卓手机画面 | [GitHub](https://github.com/Genymobile/scrcpy) |

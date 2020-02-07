@@ -1,0 +1,31 @@
+docker.qgaye.com {
+    tls qgaye0601@outlook.com
+    proxy / portainer:9000
+}
+
+ci.qgaye.com {
+    tls qgaye0601@outlook.com
+    proxy / drone:80
+}
+
+rabbitmq.qgaye.com {
+    tls qgaye0601@outlook.com
+    proxy / rabbitmq:15672
+}
+
+code.qgaye.com {
+    tls qgaye0601@outlook.com
+    proxy / theia:3000 {
+        websocket
+    }
+}
+
+git.qgaye.com {
+    tls qgaye0601@outlook.com
+    proxy / gitea:3000
+}
+
+api.qgaye.com {
+    tls qgaye0601@outlook.com
+    proxy / yapi:3000
+}

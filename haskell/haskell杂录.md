@@ -1,8 +1,9 @@
-# Haskell学习笔记
+# Haskell杂录
 
 ## Mac安装Haskell
 
-`brew install ghc`
+1. 通过brew安装 `brew install ghc`
+2. 通过stack工具安装 [安装教程](https://docs.haskellstack.org/en/stable/README/#how-to-install) 接着运行`stack ghc`就会自动安装ghc
 
 ## ghci
 
@@ -21,6 +22,7 @@
 
 - `_` 表示不关心某个值的类型
 - `x:xs` 表示列表，其中x是列表的第一个元素，xs是剩余的元素
+- 在`x:xs`模式下如果想使用整个列表，可以使用as模式，即`all@(x:xs)`，此处`all`代表了整个列表
 
 ## 中缀函数
 
@@ -38,6 +40,15 @@
 此时，x会被编译器类型推导为Int
 而若不主动申明是Int时，会被推导为Num
 
+## case
+
+模式匹配本质上就是case的语法糖
+
+```haskell
+case x of [] -> "empty"
+          x:xs -> "list"
+```
+
 ## 列表
 
 Haskell中的列表，不同于其他语言中数组的概念，其本质是单链表
@@ -49,6 +60,15 @@ tail [1 ,2 ,3]  -- [2, 3]
 take 2 [1, 2, 3]  -- [1, 2]
 drop 2 [1, 2, 3] -- [3]
 replicate 3 1 -- [1, 1, 1] 构造长度为n的列表
+cycle [1, 2] -- [1, 2, 1, 2, 1, 2, ...] 循环构造无限长的列表
+repeat 1 -- [1, 1, ...] 无限长的列表
+```
+
+### 以集合的形式表示列表
+
+```haskell
+-- 返回[1..10]的列表中大于5的元素乘以2的列表
+[ x*2 | x <- [1..10], x > 5] -- [12, 14, 16, 18, 20] 
 ```
 
 ### 列表在内存中的形式
@@ -77,16 +97,18 @@ replicate 3 1 -- [1, 1, 1] 构造长度为n的列表
 
 使用`data`关键词创建新的数据类型
 
-- `data` 关键字构造自定义数据类型
-- `BookClass`: 类型构造器
-- `BookNew`: 值构造器
-
 ```haskell
 data BookClass = BookNew Int String
 book = BookNew 111 "aaaa"    -- book :: BookClass
 ```
 
-**其中类型构造器与只构造器名称可以相同**
+- `data` 关键字构造自定义数据类型
+- `BookClass`: 类型构造器
+- `BookNew`: 值构造器
+
+**其中类型构造器与值构造器名称可以相同**  
+
+**值构造器本质上来说就是一个函数**，因此其适用于柯里化，如下的函数是正确可行的 `map (BookNew 1) ["a", "b", "c"]`
 
 其中可以为值构造器中参数设定别名
 
@@ -103,11 +125,11 @@ data Person = Person name age
 
 ### 代数数据类型
 
-有一个以上的值构造器的数据类型称为袋鼠数据类型
+有一个以上的值构造器的数据类型称为代数数据类型
 
 ```haskell
 data Bool = True | False
-data Payment = Money 
+data Payment account = Money 
             | Alipay account
             | Wxpay account
 ```
@@ -119,6 +141,8 @@ data Payment = Money
 ```haskell
 data Book = Book Int String
 ```
+
+> 元组中使用`fst`取出元组的第一个元素，`snd`取出第二个元素
 
 此外，对于两个不同的数据类型，即使他们的值构造器成分相同，但是也是不同的类型
 
@@ -364,5 +388,77 @@ y = Inch 4
 
 在`data Cm`中可以看到其装载了一个`Double :: Double`的盒子，其本质是对底层的`Double`类型进行了次打包
 而在`newType Inch`中，由于其只允许接受一个参数，因此在编译阶段可以放心的把装载`Double`的盒子替换掉，这也是**`newType`比`data`速度更快的原因**
+
+## 约束
+
+使用 `=>` 来约束
+
+1. 约束了a的类型必须为Num
+
+```haskell
+add :: Num a => a -> a -> a
+add a b = a + b
+```
+
+2. 约束了m想成为Monad的前提是它必须是Applicative
+
+```haskell
+class Applicative  => Monad m where
+    return :: a -> m a
+```
+
+## 模块
+
+### 模块导入
+
+```haskell
+import Data.List -- 导入Data.List包中的所有函数
+import Data.List (nub, sort) -- 导入Data.List包中的两个函数
+import Data.List hiding (nub) -- 导入Data.List包中的所有函数，但把nub去除掉
+import qualified Data.Map as M -- 导入Data.Map包中的所有函数，但调用时需要使用M.的形式调用
+```
+
+### 模块导出
+
+haskell中的模块名严格依赖于文件名/文件夹名
+
+```haskell
+module [文件夹].[文件名]
+(
+    [待导出的函数]
+   ,[待导出的函数]
+) where
+```
+
+举例： 在Gometry文件夹下的Cube文件
+
+```haskell
+module Gometry.Cude
+(
+  Fruit(..) -- 两个点表示导出该类型的所有值构造函数，等效于Fruit(Apple, Banana)
+, calcVolume
+) where
+
+data Fruit = Apple Int
+            | Banana Int 
+
+calcVolume :: Int -> Int
+```
+
+## string -> int / int -> string
+
+- `string -> int` 使用`read`函数，该函数提供string到任何类型的方法
+- `int -> string` 使用`show`函数，该函数提供任何类型到string的方法
+
+`read`和`show`分别是`Read`和`Show`两个类型类的函数
+
+## 类型的类型
+
+类型的类型指的是类似`Int`，`Char`这类类型的类型，使用`:k`查看该类型的类型
+
+比如`:k Int`能看到Int类型的类型是`*`，表示Int是一个具体的类型了(单个`*`就表示这是个具体的类型)
+
+但如果定义`data Fruit a = Fruit a`，接着查看`:k Fruit`发现显示的是`* -> *`，这说明`Fruit`不是一个具体的类型，它要接受一个具体的类型，然后才能返回一个具体的类型，因此如果给它一个具体类型`Int`，查看`:k Fruit Int`其显示的就是`*`，说明已经是一个具体类型了
+
 
 

@@ -11,6 +11,7 @@
 - [PyCharm](JetBrains-ToolBox) - Python IDE
 - [WebStorm](JetBrains-ToolBox) - Js/Html/Css IDE
 - [GoLand](JetBrains-ToolBox) - Go IDE
+- [Andriod Studio](JetBrains-ToolBox) - Andriod IDE
 - [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html) - 微信小程序开发
 - [VsCode](https://code.visualstudio.com/) - 更强大的编辑器
 - [Sublime Text 3](https://www.sublimetext.com/) - 更快的编辑器
@@ -55,6 +56,8 @@
 - [Caffeinated](https://apps.apple.com/cn/app/caffeinated-%E9%98%B2%E4%BC%91%E7%9C%A0%E5%BA%94%E7%94%A8/id1362171212?mt=12) - 阻止电脑睡眠
 - [AnotherRedisDesktopManager](https://github.com/qishibo/AnotherRedisDesktopManager) - redis图形化界面
 - [Medis](https://github.com/luin/medis) - redis图形化界面 
+- [Hidden Bar](https://github.com/dwarvesf/hidden) - 隐藏顶部菜单栏图标
+- [Microsoft Remote Desktop for Mac](https://install.appcenter.ms/orgs/rdmacios-k2vy/apps/Microsoft-Remote-Desktop-for-Mac/distribution_groups/All-users-of-Microsoft-Remote-Desktop-for-Mac) - Windows远程桌面(Beta版下载地址，国区iTunes不支持下载)
 
 ## SetApp中推荐软件
 

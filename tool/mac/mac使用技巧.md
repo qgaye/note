@@ -3,7 +3,7 @@
 ## 系统
 
 - `Command + Space` 打开聚焦搜索
-- `Command + Tab` 在应用程序间切换
+- `Command + Tab` 在应用程序间切换 (在`Command + Tab`模式下，使用向上键或向下键来显示该应用程序的所有窗口)
 - `Command + Tab + Option` 在应用程序间切换，最小化或被隐藏的窗口将被打开
 - `Command + ` ` 在应用程序中的窗口间切换
 - `Command + H` 隐藏当前窗口
@@ -178,3 +178,10 @@ defaults write com.apple.dock springboard-rows Default defaults write com.apple.
 
 1. 在设置的安全性与隐私中在允许从以下位置下载的APP中选择任何来源
 2. 若选择任何来源后无效，则在Finder中软件处按住Control单击软件，点击打开
+
+## iPhone有线投屏到Mac
+
+1. 将iPhone通过数据线连接到Mac，并选择信任该Mac
+2. 打开QuickTime Player，在左上角中 -> 文件 -> 新建影片录制
+3. 在新打开的界面(FaceTime摄像头)中的录制按钮(红色圆圈按钮)旁，点击向下的小箭头，选择待投屏的iPone即可
+

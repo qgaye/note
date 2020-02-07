@@ -3,9 +3,15 @@ services:
   portainer:
     image: portainer/portainer:1.23.0
     container_name: portainer
-    ports:
-      - 8000:8000
-      - 9000:9000
+    restart: always
+    #ports:
+      #- 8000:8000
+      #- 9000:9000
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - './data:/data'
+
+networks:
+  default:
+    external:
+      name: caddy_net

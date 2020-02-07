@@ -1,6 +1,6 @@
 version: '3'
 services:
-  rabbitmq1:
+  rabbitmq:
     image: "rabbitmq:3-management"
     hostname: "rabbit"
     container_name: "rabbitmq"
@@ -12,9 +12,14 @@ services:
       RABBITMQ_DEFAULT_VHOST: "/"
     ports:
       - "5672:5672"
-      - "4369:4369"
-      - "15672:15672"
-      - "25672:25672"
+      #- "4369:4369"
+      #- "15672:15672"
+      #- "25672:25672"
     volumes:
       - "./data:/var/lib/rabbitmq/"
-      - "./log/:/var/log/rabbitmq/"
+      #- "./log/:/var/log/rabbitmq/"
+
+networks:
+  default:
+    external:
+      name: caddy_net

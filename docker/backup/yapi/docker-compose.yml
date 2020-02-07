@@ -1,0 +1,34 @@
+version: '3'
+services:
+  yapi:
+    image: jayfong/yapi:latest
+    restart: always
+    container_name: yapi
+    #ports:
+      #- 3000:3000
+    environment:
+      - YAPI_ADMIN_ACCOUNT=qgaye0601@outlook.com
+      - YAPI_ADMIN_PASSWORD=0601
+      - YAPI_CLOSE_REGISTER=true
+      - YAPI_DB_SERVERNAME=yapi-db
+      - YAPI_DB_PORT=27017
+      - YAPI_DB_DATABASE=yapi
+      - YAPI_MAIL_ENABLE=false
+      - YAPI_LDAP_LOGIN_ENABLE=false
+      - YAPI_PLUGINS=[]
+    depends_on:
+      - yapi-db
+
+  yapi-db:
+    image: mongo:3
+    restart: always
+    container_name: yapi-db
+    volumes:
+      - ./db:/db
+    expose:
+      - 27017
+
+networks:
+  default:
+    external:
+      name: caddy_net

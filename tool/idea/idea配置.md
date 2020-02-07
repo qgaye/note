@@ -100,3 +100,10 @@
 2. 在`Apparance`中将默认勾选上的`Show tabs in one line`的勾去掉
 
 ![tab多行显示](../pics/mutil_tab.png)
+
+### 显示类型信息
+
+1. `Settings -> Editor -> Inlay Hints`
+2. 选择设定语言，如`Kotlin`，在右边选择需要显示的情况打勾
+
+![显示类型信息](../pics/show_parameter_hints.png)

@@ -1,0 +1,19 @@
+version: '3.5'
+services:
+  caddy:
+    image: abiosoft/caddy:1.0.3
+    container_name: caddy
+    restart: always
+    environment:
+        ACME_AGREE: 'true'
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - './Caddyfile:/etc/Caddyfile'
+      - './certs:/root/.caddy'
+
+networks:
+  default:
+    external:
+      name: caddy_net

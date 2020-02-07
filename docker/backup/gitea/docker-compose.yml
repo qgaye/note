@@ -1,0 +1,38 @@
+version: '3'
+services:
+  gitea:
+    image: gitea/gitea:1.10
+    container_name: gitea
+    restart: always
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - DB_TYPE=mysql
+      - DB_HOST=gitea-db:3306
+      - DB_NAME=gitea
+      - DB_USER=gitea
+      - DB_PASSWD=gitea
+    volumes:
+      - ./data:/data
+    ports:
+      #- "3000:3000"
+      - "2222:22"
+    depends_on:
+      - gitea-db
+
+  gitea-db:
+    image: mysql:8
+    container_name: gitea-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=gitea
+      - MYSQL_DATABASE=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=gitea
+    volumes:
+      - ./db/:/var/lib/mysql
+
+networks:
+  default:
+    external:
+      name: caddy_net

@@ -1,0 +1,20 @@
+version: '3.5'
+services:
+  mongo:
+    image: mongo:3
+    container_name: mongodb
+    restart: always
+    command: mongod --auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: qgaye
+      MONGO_INITDB_ROOT_PASSWORD: 0601
+    ports:
+      - 27017:27017
+    volumes:
+      - /root/docker/mongodb/data:/data/db
+    networks:
+      - mongo_net
+
+networks:
+  mongo_net:
+    name: mongo_net

@@ -1,0 +1,16 @@
+version: '3'
+services:
+  theia:
+    image: theiaide/theia:0.14.0
+    container_name: theia
+    restart: always
+    user: root
+    #ports:
+      #- 3000:3000
+    volumes:
+      - ./project:/home/project:cached
+
+networks:
+  default:
+    external:
+      name: caddy_net
