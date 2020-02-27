@@ -1,0 +1,20 @@
+# Atomic杂录
+
+`java.util.concurrent.atomic`包下的原子类能够帮助我们在不使用synchronzied/Lock加锁的方式来保证原子性
+
+- 基本类型：AtomicInteger 提供该值的原子读写操作
+- 数组：AtomicIntegerArray 提供该数组内值的原子读写操作
+- 引用类型：AtomicReference 提供引用变量的原子读写操作
+- 包装普通变量：AtomicIntegerFieldUpdater 将某个普通变量包装后提供原子读写操作
+
+在JDK1.8中引入的LongAdder
+
+原先提供的AtomicLong是通过CAS操作来修改值的，因此如果没有修改成功就会不断循环重新尝试，并且每次修改都需要flush和refresh，非常消耗资源
+
+相较于AtomicLong的add操作是每次都更新主内存中的值，LongAdder可以通过更新各个线程内工作内存来避免并发更新时的性能问题
+
+LongAdder中的add操作，其中有一个base变量和一个数组cell变量，如果在通过CAS更新时发现没有冲突就直接更新base值，否则就创建cell数组，每个线程都对应了cell数组中的一个位置，那么每个线程更新都是cell数组中不同的位置，这就保证了并发更新时一定不会发生冲突
+
+LongAdder中的sum操作，如果cell为空就表示base就是正确值，否则就遍历cell数组，统计和作为正确值。这里注意，sum操作是不加锁的，因此在遍历时cell也是可能被更新的，那么统计值就有可能发生误差
+
+总结：LongAdder通过维护base和cell数组两个变量来保证低并发时和AtomicLong性能差距不大而在高并发时能有更好的性能(用空间换时间)
