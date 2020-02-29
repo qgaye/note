@@ -20,13 +20,13 @@ CAS的缺点：
 
 AQS是AbstractQueuedSynchronizer这个抽象类的缩写，其本身一系列对线程是否阻塞是否唤醒的方法，另外还有一些待重写的可以自定义实现的方法
 
-(因为AbstractQueuedSynchronizer中分为共享模式和独占模式，因此其不知道使用者要实现的是哪种模式，无法设置为abstract方法)
+(因为AbstractQueuedSynchronizer中分为共享模式和独占模式，因此其不知道使用者要实现的是哪种模式，无法都设置为abstract方法)
 
 ReentrantLock、CountDownLatch、Semaphore、ThreadPoolExecutor等都是用到了AQS，在它们中都有一个Sync的类实现了AbstractQueuedSynchronizer抽象类，又在Sync中重写了对应的方法来满足不同的需求
 
 AQS三大核心：
-1. state 不同的类中state代表的含义不同，ReentrantLock中代表重入数，CountDownLatch中代表倒数数，Semaphore中代表信号量
-2. 控制线程抢锁和配合的FIFO队列 AQS维护的等待中的线程队列，并在合适的时机唤醒它们，这个队列中每个Node就是个Thread
-3. 需要自定义实现的获取/释放(acquire/release)方法 AQS中调用了自定义实现的方法来达到不同的效果
+1. state：不同的类中state代表的含义不同，ReentrantLock中代表重入数，CountDownLatch中代表倒数数，Semaphore中代表信号量
+2. 控制线程抢锁和配合的FIFO队列：AQS维护的等待中的线程队列，并在合适的时机唤醒它们，这个队列中每个Node就是个Thread
+3. 需要自定义实现的获取/释放(acquire/release)方法：AQS中调用了自定义实现的方法来达到不同的效果
 
 AQS和CAS不是独立的两个实现，在AQS中的赋值操作也用到了CAS来保证并发安全
