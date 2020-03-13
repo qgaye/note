@@ -38,6 +38,7 @@
 - [marktext](https://github.com/marktext/marktext) - 及时预览的markdown编辑器
 - [VirtualBox](https://www.virtualbox.org/) - 虚拟机
 - [WireShark](https://www.wireshark.org/) - 抓包工具
+- [Spark](https://apps.apple.com/cn/app/spark-readdle-%E5%87%BA%E5%93%81%E7%9A%84%E9%82%AE%E7%AE%B1%E5%BA%94%E7%94%A8/id1176895641?mt=12) - 邮件
 
 ## 比较推荐
 
@@ -58,6 +59,8 @@
 - [Medis](https://github.com/luin/medis) - redis图形化界面 
 - [Hidden Bar](https://github.com/dwarvesf/hidden) - 隐藏顶部菜单栏图标
 - [Microsoft Remote Desktop for Mac](https://install.appcenter.ms/orgs/rdmacios-k2vy/apps/Microsoft-Remote-Desktop-for-Mac/distribution_groups/All-users-of-Microsoft-Remote-Desktop-for-Mac) - Windows远程桌面(Beta版下载地址，国区iTunes不支持下载)
+- [Fenetre Lite](https://apps.apple.com/cn/app/fen%C3%AAtre-lite/id1288451627?mt=12) - 强制显式在最顶层
+- [Sourcetrail](https://www.sourcetrail.com/) - 源码查看软件
 
 ## SetApp中推荐软件
 

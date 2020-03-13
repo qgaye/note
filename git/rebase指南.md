@@ -58,3 +58,13 @@ git commmit -amend
 - `git rebase --abort` 放弃此次`rebase`操作
 - `git rebase --continue` 进行下一步执行
 - `git rebase --edit-todo` 继续进入编辑模式
+
+## cherry-pick
+
+rebase指令是相对于分支的，因此在合并时会把rebase对象分支的所有commit都会被保留
+
+但有些情况下我们希望只保留指定的commit到master上，此时就可以使用cherry-pick
+
+切换到master分支，本来是`git rebase branch`，现在`git cherry-pick [commits...]`
+
+这样就可以把所有指定的commits复制到master分支上了

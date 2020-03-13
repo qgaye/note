@@ -24,6 +24,8 @@ ThreadLocal中的get/set/remove等操作都是在操作`threadLocals`，具体�
 - 如果`threadLocals`为空就去初始化该变量
 - 否则就用当前ThreadLocal变量(即this对象)作为key去`threadLocals`这个map中进行操作
 
+ThreadLocalMap中通过维护一个默认大小为16的Entry数组来存储，通过对key的hashcode取模来确定在数组中的位置，并且它的hash算法使用的是线性探测法，因此无需像HashMap中的Node节点一样需要一个next指针(没有next指针那么Enrty之间就没有引用，帮助GC)
+
 总结，ThreadLocal中不存储任何具体的数据，真正数据存储在Thread的`threadLocals`变量中，ThreadLocal其是作为`threadLocals`的key，此外对`threadLocals`的系列操作是由ThreadLocal提供。所以不要误认为ThreadLocal中存储数据，其本质可以理解为一个工具类，提供了对线程中`threadLocals`该变量的一系列操作
 
 ## 内存泄漏问题

@@ -55,3 +55,11 @@ git branch -m [old] [new]
 git remote show [remote name]
 git remote prune [remote name]
 ```
+
+## 强制将分支指向某个commit
+
+强制将[branch]分支指向[commit]该提交上
+
+```bash
+git branch -f [branch] [commit]
+```
