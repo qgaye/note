@@ -27,6 +27,8 @@ email/传输任务 使用消息队列来达到异步的作用
 难点：
 
 - DbContext的线程安全问题，在高并发(第一次访问页面的时候)会造成SaveAsyncChange
+- 为了预防恶意请求不存在的数据ID造成数据库奔溃，做了个不存在的ID的redis缓存(redis中的key设计为`表名:列名:主键名:主键值`)
+- 疫情期间并发突增，使用redis来保存JWT过期的(黑名单)的access_token和refresh_token
 - 项目设计上本来用了T4模版，现在直接用抽象类+接口的方式
 - 有趣的bug：单例 = / =>
 
