@@ -21,5 +21,7 @@
 | `Shift + Command + ]` | 切换到后一个Tab |
 | `Shift + Shift` | Search Everywhere |
 | `Alt + F12` | 调出Terminal |
+| `Option + Command + <-` | 回到光标上次所在位置 |
+| `Option + Command + ->` | 回到光标下次所在位置 |
 
 [更详细的IDEA快捷键](https://github.com/judasn/IntelliJ-IDEA-Tutorial/blob/master/keymap-mac-introduce.md)
