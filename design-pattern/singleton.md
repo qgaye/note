@@ -67,19 +67,18 @@ public class Singleton {
 
 ```java
 public class Singleton {   
-      private Singleton (){
-      }   
-      private volatile static Singleton instance; 
-      public static Singleton getInstance() {  
-      if (instance == null) {  
-          synchronized (Singleton.class) {  
-          if (instance == null) {  
-              instance = new Singleton();  
-          }  
-        }  
-     }  
-     return instance;  
-     }  
+    private Singleton() {}
+    private volatile static Singleton instance;
+    public static Singleton getInstance() {
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
  }
 ```
 
@@ -87,7 +86,7 @@ public class Singleton {
 
 首先明确一点，volatile在此处提供的不是可见性，因为synchronized已经提供了可见性(后面synchronzied的代码块是一定能看到前面synchronized代码块中的操作)来保证第二个`instance == null`中一定能够看到其他线程中new出的新Instance
 
-此处volatile提供的是禁止指令重排序，因为`new Singleton()`这个new操作本身不是原子操作，其中包括分配内存地址，进行具体的构造过程，将内存地址赋值给变量，而这几个操作是会被指令重排序的，因此很可能发送在new的过程中，真正构造过程还没执行完，已经将一块空内存赋值给了变量，此时其他线程在第一处`instance == null`时发现确实不为null，但其实instance本身还未完全初始化完成。因此此处需要禁止指令重排序来保证初始化动作完成后再赋值给变量。
+此处volatile提供的是禁止指令重排序，因为`new Singleton()`这个new操作本身不是原子操作，其中包括分配内存地址，进行具体的构造过程，将内存地址赋值给变量，而这几个操作是会被指令重排序的，因此很可能发生在new的过程中，真正构造过程还没执行完，已经将一块空内存赋值给了变量，此时其他线程在第一处`instance == null`时发现确实不为null，但其实instance本身还未完全初始化完成。因此此处需要禁止指令重排序来保证初始化动作完成后再赋值给变量。
 
 ### 静态内部类单例模式 (可用)
 

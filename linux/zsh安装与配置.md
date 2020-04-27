@@ -3,7 +3,7 @@
 1. 安装zsh(Mac自带)，`chsh -s /bin/zsh`切换到zsh
 2. 安装[oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh/)
 3. 配置oh-my-zsh主题，在`~/.zshrc`中配置`ZSH_THEME=wezm+`，[更多主题](https://github.com/robbyrussell/oh-my-zsh/wiki/themes)
-4. oh-my-zsh插件，`zsh-syntax-highlighting`和`zsh-syntax-highlighting`，并在`~/.zshrc`中配置`plugins=()`
+4. oh-my-zsh插件，`last-working-dir`，`zsh-syntax-highlighting`和`zsh-autosuggestions`，并在`~/.zshrc`中配置`plugins=()`
 
 ```bash
 // zsh-syntax-highlighting
@@ -19,3 +19,7 @@ git clone git://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh
 chmod 755 /usr/local/share/zsh
 chmod 755 /usr/local/share/zsh/site-functions
 ```
+
+oh-my-zsh其他插件
+
+1. autojump，通过`brew install autojump`安装，并在`~/.zshrc`中加上`[[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh`
