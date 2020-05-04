@@ -69,3 +69,7 @@
 3.配置使idea中的复制粘贴与系统剪贴板同步
 
 将`set slipboard+=unnamed`写入配置文件
+
+## 13. `Presentation Assistant`
+
+显示快捷键操作的功能和对应mac/win下的快捷键
