@@ -29,6 +29,13 @@ git branch [branch] [commit]  #基于commit新建branch分支
 git checkout -b [branch]  # 新建branch分支，并切换到该分支
 ```
 
+## 创建远程分支
+
+```bash
+git push [origin] [local branch]:[new remote branch]  # 将本地分支push到远程新创建的分支
+git push [origin] [local branch(no same name branch on remote)]  # 将在远程创建同名的分支，并将本地分支push到远程创建的分支上
+```
+
 ## 删除分支
 
 不能删除当前所在分支，必须切换到其他分支后才能删除该分支

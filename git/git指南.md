@@ -186,6 +186,13 @@ doc/    # 忽略名称为doc的文件夹，但不会忽略文件名doc的文件
 !/folder   # 不忽略folder文件夹
 ```
 
+## clone指定分支
+
+```bash
+git clone [url]   # 不指定分支
+git clone -b [branch] [url]   # clone指定分支branch
+```
+
 ## 储藏未提交内容
 
 保存未添加到暂存区和未提交的修改内容到堆栈中，使得可以切换到别的分支解决其他问题，并可以随时重新应用
