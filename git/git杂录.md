@@ -1,4 +1,4 @@
-# Git中的小问题
+# Git杂录
 
 ## 命令行中文乱码问题
 
@@ -31,4 +31,12 @@ git config --global pager.status true
 
 ```bash
 git push origin [commit]:dev
+```
+
+## pretty log
+
+`git lg` 代替 `git log`
+
+```bash
+git config --global alias.lg "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 ```
