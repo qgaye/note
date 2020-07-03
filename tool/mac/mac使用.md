@@ -1,4 +1,4 @@
-# Mac使用技巧
+# Mac使用
 
 ## 系统
 
@@ -56,6 +56,31 @@ killall Finder
 - 高级
   - 显示所有文件扩展名
   - 执行搜索时：搜索当前文件夹
+  
+### Finder打开顶部Tab Bar和底部路径栏
+
+Finder -> View -> Show Tab Bar
+Finder -> View -> Show Path Bar
+
+### Finder显示用户资料库
+
+```bash
+chflags nohidden ~/Library/
+```
+
+## 设置默认浏览器和邮件
+
+### 设置默认浏览器
+
+System Preferences -> General
+
+![设置默认浏览器](../pics/set_default_browser.png)
+
+### 设置默认邮件
+
+Mail -> Perferences(Command + `) + General
+
+![设置默认邮件](../pics/set_default_mail.png)
 
 ## 屏幕快照
 
