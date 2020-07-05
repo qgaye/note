@@ -210,3 +210,11 @@ defaults write com.apple.dock springboard-rows Default defaults write com.apple.
 2. 打开QuickTime Player，在左上角中 -> 文件 -> 新建影片录制
 3. 在新打开的界面(FaceTime摄像头)中的录制按钮(红色圆圈按钮)旁，点击向下的小箭头，选择待投屏的iPone即可
 
+## Mac关闭错误声音
+
+![Mac关闭错误声音](../pics/mac_close_bell.png)
+
+## Mac默认使用F1～12功能
+
+![Mac的F1～12](../pics/mac_change_fn.png)
+

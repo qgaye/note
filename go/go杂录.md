@@ -423,8 +423,10 @@ defer func() {
 - 单元测试的函数名必须以`Test`开头，并是可导出的公开函数
 - 单元测试的函数必须接收一个testing.T类型的指针，并且没有返回值
 
-`go test [path]` 运行单元测试
-`go test [path] -v` 运行单元测试，显示详细信息
+`go test` 运行所有单元测试
+`go test [file]` 运行指定文件的单元测试
+`go test [file] -v` 运行指定文件的单元测试，显示详细信息
+`go test [file] -test.run [function]` 运行指定文件下指定函数的单元测试
 `go test -coverprofile=c.out` 生成单元测试代码覆盖率，使用`go tool cover -html=c.out`在浏览器中查看
 
 ## 注释
