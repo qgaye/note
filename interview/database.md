@@ -14,3 +14,27 @@ MySQL实现ACID机制：
 - 隔离性：MVCC和锁机制
 - 持久性：redo log
 
+## buffer pool/redo log/change log联系
+
+## buffer pool
+
+buffer pool（缓冲池）即类似一个缓存机制，以避免每次查询都需要进行磁盘IO
+
+预读：MySQL中是以页作为数据存储的基本单位，页的大小一般为16K。MySQL在读取时不是仅仅只读需要的那一条，而是将整个页全部加载进buffer pool，因为该条数据的周围数据大概率会被继续读取（局部性原则），这样提前加载可以有效减少磁盘IO
+
+但是buffer pool是会满的，MySQL使用新老生代的LRU算法来有效避免普通LRU算法带来的缓冲池污染的问题
+
+新老生代LRU算法：
+
+整个buffer pool前70%被分为新生代，后30%被分为老生代
+- 当读取的数据不在buffer pool中：
+    - 查询出该数据，直接插入到老生代的head，如果buffer pool满了则淘汰掉老生代中的tail（也就是整个buffer pool的tail）再插入到老生代的head
+- 当读取的数据在buffer pool中：
+    - 如果数据位于新生代中，则将它移动到到新生代的head（也就是整个buffer pool的head）
+    - 如果数据位于老生代中，并且该数据在老生代中停留时间大于1s（由参数控制）时，移动到新生代的head，否则保持原先位置不变
+
+当批量扫描大量数据时，因为移动到head是需要停留时间的要求的，所以这些非热点数据只会在老生代中不断被替换，而不会影响到处在新生代中真正的热点数据
+
+## redo log
+
+## MySQL崩溃恢复
