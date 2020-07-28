@@ -14,7 +14,7 @@ MySQL实现ACID机制：
 - 隔离性：MVCC和锁机制
 - 持久性：redo log
 
-## buffer pool/redo log/change log联系
+## buffer pool/redo log/change buffer联系
 
 ## buffer pool
 
