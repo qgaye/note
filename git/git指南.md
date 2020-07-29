@@ -21,6 +21,10 @@ git config --list [--local | --global | --system]
 - `--global` 对该用户的所有仓库有效，存储于`~/.gitconfig`
 - `--system` 对系统中的所有用户有效，存储于`etc/gitconfig`
 
+## `Git`命令流程
+
+![git工作流程总示图](./pics/git.png)
+
 ## `Git`基础使用
 
 ### 1. 初始化`Git`仓库
@@ -53,6 +57,16 @@ git add -u
 # 交互式模式一段段提示时候需要add
 git add -p
 ```
+
+### 从暂存区移出到工作区
+
+当文件已被`git add`到暂存区后，可以通过如下命令将指定文件移出暂存区到工作区
+
+```bash
+git restore --staged [file]
+```
+
+这是新版本的命令，旧版本是`git reset HEAD [file]`，此外`git restore`命令会将不在暂存区中的所有其他文件修改全部撤销
 
 ### 停止追踪文件
 
@@ -96,15 +110,17 @@ git commit --amend
 ### 文件比较
 
 ```bash
-# 比较暂存区与HEAD的文件差异
-git diff --cached   
-# 比较当前工作区与暂存区的文件差异
+# 工作区 vs 暂存区
 git diff   
-# 比较指定文件的差异变化
+# 工作区 vs HEAD
+git diff HEAD
+# 暂存区 vs HEAD
+git diff --cached   
+# 指定文件
 git diff --[file]   
-# 比较两个commit之间的文件差异
+# 两个commit之间
 git diff [commit] [commit]   
-# 两个commit之间哪些文件做了变动
+# 两个commit之间哪些文件做了变动（只显示变动行数，不显示具体变化内容）
 git diff [commit] [commit] --stat
 ```
 
@@ -193,6 +209,8 @@ git clone [url]   # 不指定分支
 git clone -b [branch] [url]   # clone指定分支branch
 ```
 
+`git clone`其实是将远程仓库中所有的分支都拉取下来了，但除了master外都是以`origin/branch-name`形式存在，可以通过`git branch -a`查看到，此时需要通过`git checkout -b [branch name] [origin branch name]`来创建映射到origin分支上的本地分支
+
 ## 储藏未提交内容
 
 保存未添加到暂存区和未提交的修改内容到堆栈中，使得可以切换到别的分支解决其他问题，并可以随时重新应用
@@ -223,10 +241,6 @@ git stash pop
 ```bash
 git fsck --unreachable
 ```
-
-## `Git`命令流程
-
-![git工作流程总示图](./pics/git.png)
 
 ## 参考
 
