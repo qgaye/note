@@ -58,15 +58,13 @@ git add -u
 git add -p
 ```
 
-### 从暂存区移出到工作区
+### 工作区/暂存区/仓库之间回退
 
-当文件已被`git add`到暂存区后，可以通过如下命令将指定文件移出暂存区到工作区
+暂存区回退到工作区(回退`git add`操作) -> `git reset HEAD [file]`，新版本中为`git restore --stage [file]`
 
-```bash
-git restore --staged [file]
-```
+仓库回退到暂存区(回退`git commit`操作) -> `git reset --soft HEAD`
 
-这是新版本的命令，旧版本是`git reset HEAD [file]`，此外`git restore`命令会将不在暂存区中的所有其他文件修改全部撤销
+工作区和暂存区回退到上一个提交，且抛弃所有工作区和暂存区的修改 -> `git reset --hard HEAD`
 
 ### 停止追踪文件
 
@@ -160,8 +158,6 @@ git clean -nfd   # 查看将会被删除的文件和文件夹
 git clean -fd    # 删除所有未被跟踪的文件和文件夹
 ```
 
-[reset的具体使用](./Reset指南.md)
-
 ### 查看提交日志
 
 ```bash
@@ -235,6 +231,15 @@ git stash pop
 ```
 
 > `git stash apply`在应用储藏时，即使先前已经在暂存区中的文件是不会应用到暂存区的，只会在工作区，若要同时应用到暂存区，需使用`--index`参数
+
+## 新版本中git restore/git switch
+
+新版本中增加了`git restore/git switch`两个命令，主要是为了区分`git checkout`的两个用法
+
+- `git switch`用于切换分支，与`git checkout [branch name]`作用相同
+- `git restore`用于将文件回退到HEAD，抛弃暂存区和工作区的修改，与`git checkout --[file]`作用相同
+
+`git restore --staged [file]`用于将文件移出暂存区到工作区，即回退`git add`操作
 
 ## 找到被删除的对象
 
