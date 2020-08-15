@@ -2,7 +2,7 @@
 
 ## 排序算法
 
-### 快排
+### 快速排序
 
 ```java
 public class QuickSort {
@@ -17,7 +17,7 @@ public class QuickSort {
         int index = left + 1;
         for (int i = index; i <= right; i++) {
             if (arr[i] < arr[left]) {
-                Swap.swap(arr, i, index);
+                swap(arr, i, index);
                 index += 1;
             }
         }
@@ -32,7 +32,7 @@ public class QuickSort {
 }
 ```
 
-### 堆排
+### 堆排序
 
 ```java
 public class HeapSort {
@@ -66,6 +66,53 @@ public class HeapSort {
         arr[j] = temp;
     }
 }
+```
+
+### 归并排序
+
+```java
+public class MergeSort {
+    public int[] mergeSort(int[] arr) {
+        if (arr.length < 2) return arr;
+        int mid = arr.length / 2;
+        int[] left = Arrays.copyOfRange(arr, 0, mid);
+        int[] right = Arrays.copyOfRange(arr, mid, arr.length);
+        return merge(mergeSort(left), mergeSort(right));
+    }
+    private int[] merge(int[] left, int[] right) {
+        int[] res = new int[left.length + right.length];
+        int index = 0;
+        int i = 0;
+        int j = 0;
+        while (i < left.length && j < right.length) {
+            if (left[i] <= right[j]) {
+                res[index] = left[i];
+                i += 1;
+            } else {
+                res[index] = right[j];
+                j += 1;
+            }
+            index += 1;
+        }
+        while (i < left.length) {
+            res[index] = left[i];
+            i += 1;
+            index += 1;
+        }
+        while (j < right.length) {
+            res[index] = right[j];
+            j += 1;
+            index += 1;
+        }
+        return res;
+    }
+}
+```
+
+## 优先队列
+
+```java
+
 ```
 
 ## LRU
@@ -170,5 +217,72 @@ public class LRU {
         }
         cache.put(key, value);
     }
+}
+```
+
+## 二叉树非递归遍历
+
+### 前序
+
+```java
+public List<Integer> inorderTraversal(TreeNode root) {
+    List<Integer> res = new ArrayList<>();
+    LinkedList<TreeNode> stack = new LinkedList<>();
+    TreeNode cur = root;
+    while (cur != null || !stack.isEmpty()) {
+        while (cur != null) {
+            res.add(cur.val);
+            stack.addLast(cur);
+            cur = cur.left;
+        }
+        cur = stack.removeLast();
+        cur = cur.right;
+    }
+    return res;
+}
+```
+
+### 中序
+
+```java
+public List<Integer> inorderTraversal(TreeNode root) {
+    List<Integer> res = new ArrayList<>();
+    LinkedList<TreeNode> stack = new LinkedList<>();
+    TreeNode cur = root;
+    while (cur != null || !stack.isEmpty()) {
+        while (cur != null) {
+            stack.addLast(cur);
+            cur = cur.left;
+        }
+        cur = stack.removeLast();
+        res.add(cur.val);
+        cur = cur.right;
+    }
+    return res;
+}
+```
+
+### 后序
+
+```java
+public List<Integer> postorderTraversal(TreeNode root) {
+    List<Integer> res = new ArrayList<>();
+    LinkedList<TreeNode> stack = new LinkedList<>();
+    TreeNode cur = root;
+    TreeNode last = null;
+    while (cur != null || !stack.isEmpty()) {
+        while (cur != null) {
+            stack.addLast(cur);
+            cur = cur.left;
+        }
+        cur = stack.getLast();
+        if (cur.right == null || cur.right == last) {
+            res.add(cur.val);
+            stack.removeLast();
+            last = cur;
+            cur = null;
+        } else cur = cur.right;
+    }
+    return res;
 }
 ```
