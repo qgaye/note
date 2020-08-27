@@ -107,3 +107,8 @@
 2. 选择设定语言，如`Kotlin`，在右边选择需要显示的情况打勾
 
 ![显示类型信息](../pics/show_parameter_hints.png)
+
+### 文件名大小写敏感
+
+1. `Help -> Edit Custome Properties...`
+2. 在打开的文件中添加`idea.case.sensitive.fs=true`
