@@ -1,5 +1,9 @@
 # Rust杂录
 
+## rustup
+
+将当前项目使用的rust版本设置为nightly `rustup override set nightly`
+
 ## 格式化打印
 
 ```rust
