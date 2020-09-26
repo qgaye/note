@@ -286,3 +286,135 @@ public List<Integer> postorderTraversal(TreeNode root) {
     return res;
 }
 ```
+
+## Morris遍历
+
+Morris遍历可以在O(n)的时间复杂度和O(1)的空间复杂度下完成二叉树的遍历，相较于递归或用栈模拟递归只需要O(1)的空间复杂度
+
+从头节点开始记作当前节点cur
+- 如果cur无左节点，cur向右移动(cur = cur.right)
+- 如果cur有左节点，找到cur的左子树中的最右的节点，记作mostRight
+  - 如果mostRight的右节点为null，则将mostRight的右节点指向cur，cur向左移动(cur = cur.left)
+  - 如果mostRight的右节点指向cur，则将mostRight的右节点指向null，cur向右移动(cur = cur.right)
+
+Morris遍历中对于没有左子树的节点只到达一次，对于有左子树的节点会到达两次
+
+```java
+public void mirros(TreeNode root) {
+    if (root == null) return;
+    TreeNode cur = root;
+    TreeNode mostRight = null;
+    while (cur != null) {
+        mostRight = cur.left;
+        if (mostRight != null) {
+            while (mostRight.right != null && mostRight.right != cur) {
+                mostRight = mostRight.right;
+            }           
+            if (mostRight.right == null) {
+                mostRight.right = cur;
+                cur = cur.left;
+                continue;
+            } else mostRight.right = null;
+        }
+        cur = cur.right;
+    }
+}
+```
+
+Morris实现前序遍历：没有左子树的直接打印，有左子树的第一次打印，第二次不打印
+
+```java
+public void mirrosPre(TreeNode root) {
+    if (root == null) return;
+    TreeNode cur = root;
+    TreeNode mostRight = null;
+    while (cur != null) {
+        mostRight = cur.left;
+        if (mostRight != null) {
+            while (mostRight.right != null && mostRight.right != cur) {
+                mostRight = mostRight.right;
+            }           
+            if (mostRight.right == null) {
+                System.out.println(cur.val); 
+                mostRight.right = cur;
+                cur = cur.left;
+                continue;
+            } else mostRight.right = null;
+        } else System.out.println(cur.val);
+        cur = cur.right;
+    }
+}
+```
+
+Morris实现中序遍历：在cur = cur.right之前打印，即表明左子树的都打印过了
+
+```java
+public void mirrosIn(TreeNode root) {
+    if (root == null) return;
+    TreeNode cur = root;
+    TreeNode mostRight = null;
+    while (cur != null) {
+        mostRight = cur.left;
+        if (mostRight != null) {
+            while (mostRight.right != null && mostRight.right != cur) {
+                mostRight = mostRight.right;
+            }           
+            if (mostRight.right == null) {
+                mostRight.right = cur;
+                cur = cur.left;
+                continue;
+            } else mostRight.right = null;
+        }
+        System.out.println(cur.val);
+        cur = cur.right;
+    }
+}
+```
+
+Morris实现后序遍历：在第一次遇到会到达两次的节点(即存在左子树的节点)就逆序其左子树的右边界，最后打印整棵树的右边界
+
+```java
+public void mirrosPost(TreeNode root) {
+    if (root == null) return;
+    TreeNode cur = root;
+    TreeNode mostRight = null;
+    while (cur != null) {
+        mostRight = cur.left;
+        if (mostRight != null) {
+            while (mostRight.right != null && mostRight.right != cur) {
+                mostRight = mostRight.right;
+            }           
+            if (mostRight.right == null) {
+                mostRight.right = cur;
+                cur = cur.left;
+                continue;
+            } else {
+                printEdge(cur.left);
+                mostRight.right = null;
+            }
+        }
+        cur = cur.right;
+    }
+    printEdge(root);
+}
+private void printEdge(TreeNode node) {
+    TreeNode tail = reverseEdge(node);
+    TreeNode cur = tail;
+    while (cur != null) {
+        System.out.println(cur.val);
+        cur = cur.right;
+    }
+    reverseEdge(tail);
+}
+private Node reverseEdge(TreeNode node) {
+    TreeNode pre = null;
+    while (node != null) {
+        TreeNode temp = node.right;
+        node.right = pre;
+        pre = node;
+        node = temp;
+    }
+    return pre;
+}
+```
+
