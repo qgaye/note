@@ -13,7 +13,19 @@ topic和partition：每个topic被分为多个partition，任何发布到该part
 partition和segment：partition在物理上表现为一个文件夹，而在每个partition文件夹下又会分成多个segment，每个segment也分别是个文件夹，segment文件夹中包括.log，.index和.timeindex三个文件，其中.log是实际存储message的地方(也就是追加写入的地方)，.index和.timeindex都是索引文件，其中.index表示的是基于offset的索引，并且是个稀疏索引，而.timeindex表示的是基于timestamp的索引
 每个segment中的.log文件大小是相同的，但是存储的message数量是不一定相等的(因为每个message大小是不一定相等的)，segment中的.log，.index和.timeindex三个文件都是以该segment中最小的offset来命名的
 
-segment和其中三种文件的作用：将partition拆分为多个segment后，在查询时可以先通过二分查找法找到该offset对应的segment，接着在segment中的.log文件中也通过二分查找法找到最接近的稀疏索引的值(也就是.log文件中的物理偏移位置)，通过物理偏移位置在O(1)直接定位到.log文件中位置，接着顺序扫描到查询的的offset处的message。其次，每个segment对应个物理文件夹也使得在清除旧数据时直接删除该文件夹就行了，避免了对文件的随机读取和删除(注意：清除旧数据并不能加快查询速度，因为无论如何都是通过物理偏移量来定位message的，因此永远是O(1))
+```txt
+partition0
+├── segment0
+│  ├── 00000000.index
+│  ├── 00000000.log
+│  └── 00000000.timeindex
+└── segment1
+   ├── 00000000.index
+   ├── 00000000.log
+   └── 00000000.timeindex
+```
+
+segment和其中三种文件的作用：将partition拆分为多个segment后，在查询时可以先通过二分查找法找到该offset对应的segment，接着在segment中的.index文件中也通过二分查找法找到最接近的稀疏索引的值(也就是.log文件中的物理偏移位置)，通过物理偏移位置在O(1)直接定位到.log文件中位置，接着顺序扫描到查询的的offset处的message。其次，每个segment对应个物理文件夹也使得在清除旧数据时直接删除该文件夹就行了，避免了对文件的随机读取和删除(注意：清除旧数据并不能加快查询速度，因为无论如何都是通过物理偏移量来定位message的，因此永远是O(1))
 
 partition的意义：
 - 方便扩展：一个topic对应多个partition，从而可以通过增加机器来扩展和应对增长的数据量
@@ -21,7 +33,7 @@ partition的意义：
   - producer在发送消息时可以指定写入的partition，如果指定了，就会写入指定的partition
   - 如果没有指定partition，但设置了数据的key，则会根据key的值hash出一个partition写入，因此如果需要将消息发送到同一个partition中，将key都设为相同即可
   - 如果即没有指定partition也没有指定key，那就会轮询找出一个partition写入
-- 高可用：partition的设计模式使得副本的最小单位是partition，而不用像rabbitmq那用必须全部数据统一创建副本
+- 高可用：partition的设计模式使得副本的最小单位是partition，而不用像rabbitmq那样必须全部数据统一创建副本
 
 message结构：.log文件也就是message存储的地方，一个message主要有三个信息
 - offset：offest是一个8byte的有序id，其可以唯一确定一条message在partition中的位置

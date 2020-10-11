@@ -141,7 +141,7 @@ public class LRU {
             Node remove = cache.removeFirst();
             map.remove(remove.key);
         }
-        map.put(key, node);
+        map.put(key, node)  ;
         cache.addLast(node);
     }
     public void remove(int key) {
@@ -225,13 +225,12 @@ public class LRU {
 ### 前序
 
 ```java
-public List<Integer> inorderTraversal(TreeNode root) {
-    List<Integer> res = new ArrayList<>();
+public void preorder(TreeNode root) {
     LinkedList<TreeNode> stack = new LinkedList<>();
     TreeNode cur = root;
     while (cur != null || !stack.isEmpty()) {
         while (cur != null) {
-            res.add(cur.val);
+            System.out.println(cur.val);
             stack.addLast(cur);
             cur = cur.left;
         }
@@ -245,8 +244,7 @@ public List<Integer> inorderTraversal(TreeNode root) {
 ### 中序
 
 ```java
-public List<Integer> inorderTraversal(TreeNode root) {
-    List<Integer> res = new ArrayList<>();
+public void inorder(TreeNode root) {
     LinkedList<TreeNode> stack = new LinkedList<>();
     TreeNode cur = root;
     while (cur != null || !stack.isEmpty()) {
@@ -255,7 +253,7 @@ public List<Integer> inorderTraversal(TreeNode root) {
             cur = cur.left;
         }
         cur = stack.removeLast();
-        res.add(cur.val);
+        System.out.println(cur.val);
         cur = cur.right;
     }
     return res;
@@ -265,8 +263,7 @@ public List<Integer> inorderTraversal(TreeNode root) {
 ### 后序
 
 ```java
-public List<Integer> postorderTraversal(TreeNode root) {
-    List<Integer> res = new ArrayList<>();
+public void postorder(TreeNode root) {
     LinkedList<TreeNode> stack = new LinkedList<>();
     TreeNode cur = root;
     TreeNode last = null;
@@ -277,7 +274,7 @@ public List<Integer> postorderTraversal(TreeNode root) {
         }
         cur = stack.getLast();
         if (cur.right == null || cur.right == last) {
-            res.add(cur.val);
+            System.out.println(cur.val);
             stack.removeLast();
             last = cur;
             cur = null;
@@ -418,3 +415,18 @@ private Node reverseEdge(TreeNode node) {
 }
 ```
 
+## 二分查找实现平方根
+
+```java
+public double sqrt(double x, double precision) {
+    double l = x > 1 ? 1 : x;
+    double r = x > 1 ? x : 1;
+    while (l <= r) {
+        double m = r + (l - r) / 2.0;
+        if (Math.abs(m * m - x) <= precision) return m;
+        else if (m * m > x) r = m;
+        else if (m * m < x) l = m;
+    }
+    return -1.0;
+}
+```

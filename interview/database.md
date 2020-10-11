@@ -33,7 +33,7 @@ MySQL默认隔离级别是可重复读(RR)，而Oracle默认隔离级别是提�
 
 为什么MySQL默认隔离级别是可重复读：
 
-因为早期MySQL中binlog只有statement一种形式，即直接保存提交的sql，因此sql语句执行的顺序就很关键，如果乱序就会导致数据异常(比如auto_increment执行顺序不同会导致值不同)，因此就需要在可重复读的隔离级别下通过间隙锁来保证sql执行顺序，但是现在binlog支持row格式，也就是不再一定需要保证sql执行顺序了
+因为早期MySQL中binlog只有statement一种形式，即直接保存提交的sql，因此sql语句执行的顺序就很关键，比如事务A删除id < 6的记录而事务B新增id = 3的记录，事务B先于事务A提交因此binlog中insert记录先于delete，在主备同步时就会造成事务B插入先执行然后被事务A的删除操作一同删除了，而在可重复的隔离级别下通过间隙锁的能力，事务A删除操作会为(0,6]加上锁从而阻止事务B的插入操作，通过保准sql执行顺序进而避免主从同步时因为binlog出现的数据不一致问题。但是现在binlog支持row格式，也就是不再一定需要保证sql执行顺序了
 
 注：为什么MySQL页默认16kb，因为当以bigint(8B)+指针(6B)作为一条记录时，一个页上可以存储1000+条数据
 
@@ -48,15 +48,15 @@ MySQL默认隔离级别是可重复读(RR)，而Oracle默认隔离级别是提�
 - 快照读：select操作，通过MVCC实现，无需加锁，但如果select + for update则会使用当前读，是会加行锁的(可重复读下加间隙锁 + 行锁)
 - 当前读：insert/update/delete，通过加行锁实现，并且一个事务中所有的行锁会在事务提交/回滚后才会全部释放
 
-在可重复读的隔离级别下默认支持间隙锁，只需要显示为select语句加上for update/lock in share mode，可以自行关闭，那就只会加行锁，在可重复读之下的隔离级别是不支持间隙锁的
+在可重复读的隔离级别下默认支持间隙锁，只需要显示为select语句加上for update/lock in share mode。间隙锁可以通过配置自行关闭，那就只会加行锁。在提交读和未提交度的隔离级别下是不支持间隙锁的
 
 幻读是通过next-key lock实现的，也就是行锁 + 间隙锁
 
 ## buffer pool
 
-buffer pool（缓冲池）即类似一个缓存机制，以避免每次查询都需要进行磁盘IO
+buffer pool(缓冲池)即类似一个缓存机制，以避免每次查询都需要进行磁盘IO
 
-预读：MySQL中是以页作为数据存储的基本单位，页的大小一般为16K。MySQL在读取时将整个页全部加载进buffer pool，因为该条数据的周围数据大概率会被继续读取（局部性原则），这样提前加载可以有效减少磁盘IO
+预读：MySQL中是以页作为数据存储的基本单位，页的大小一般为16K。MySQL在读取时将整个页全部加载进buffer pool，因为该条数据的周围数据大概率会被继续读取(局部性原则)，这样提前加载可以有效减少磁盘IO
 
 但是buffer pool是会满的，MySQL使用新老生代的LRU算法来有效避免普通LRU算法带来的缓冲池污染的问题
 
@@ -64,10 +64,10 @@ buffer pool（缓冲池）即类似一个缓存机制，以避免每次查询都
 
 整个buffer pool前70%被分为新生代，后30%被分为老生代
 - 当读取的数据不在buffer pool中：
-    - 查询出该数据，直接插入到老生代的head，如果buffer pool满了则淘汰掉老生代中的tail（也就是整个buffer pool的tail）再插入到老生代的head
+    - 查询出该数据，直接插入到老生代的head，如果buffer pool满了则淘汰掉老生代中的tail(也就是整个buffer pool的tail)再插入到老生代的head
 - 当读取的数据在buffer pool中：
-    - 如果数据位于新生代中，则将它移动到到新生代的head（也就是整个buffer pool的head）
-    - 如果数据位于老生代中，并且该数据在老生代中停留时间大于1s（由参数控制）时，移动到新生代的head，否则保持原先位置不变
+    - 如果数据位于新生代中，则将它移动到到新生代的head(也就是整个buffer pool的head)
+    - 如果数据位于老生代中，并且该数据在老生代中停留时间大于1s(由参数控制)时，移动到新生代的head，否则保持原先位置不变
 
 当批量扫描大量数据时，因为移动到head是要求数据在老生代中达到一定停留时间的，所以这些非热点数据只会在老生代中不断被替换，而不会影响到处在新生代中真正的热点数据
 
@@ -81,13 +81,15 @@ buffer pool（缓冲池）即类似一个缓存机制，以避免每次查询都
 - redo log在整个事务执行过程中都会不断的持久化到磁盘(定时刷盘或组提交)，而binlog则是在整个事务提交后才会落盘
 - redo log在磁盘上是指定存储到`ib_logfile1/2/3...`文件中，文件数量和大小是配置的，因此如果一旦redo log文件满了，就需要将记录应用到真正的数据磁盘上(即脏页落盘)，redo log file中有一个checkpoint，checkpoint之后表示还未刷盘的redo log，即数据库奔溃后需要恢复应用的redo log，而binlog是无限追加写到文件中的
 
-因为未提交和回滚的事务也都记录了redo log，因此当恢复时对这些事务需要特殊处理：在InnoDB进行恢复时，会重做所有事务的redo log，接着对未提交的事务执行undo log
-- 因为未提交的事务在恢复时需要执行undo log，因此undo log会被看作数据一起被记录在redo log中，当发现恢复的事务是未提交的，那就会执行undo log来回滚这些操作
-- 对于回滚的事务，会直接在redo log中与本身事务相反的操作，比如插入数据在回滚后会在redo log中接着插入条删除数据的记录
+MySQL宕机恢复流程：
+1. 启动时检测是否发生了崩溃
+2. 定位到最近一个checkpoint(checkpoint记录的是LSN(日志序列号)，checkpoint之前的redo log表示已经全部刷入磁盘，之后的表示还未这部分脏页还未刷入磁盘，checkpoint可以有效加快恢复速度)
+3. 分析redo log，找出未提交事务(redo log中不直接记录提交状态，通过在rollback segment中寻找活跃事务时候有undo log，有即表示该事务未提交，所以事务提交即写入"清除该事务的undo log这个操作"的redo log)
+4. 顺序执行redo log，然后执行未提交事务的undo log进行回滚
 
 ## undo log
 
-MVCC中通过undo log实现事务的回滚和回溯获取到当前事务所在版本的数据，MVCC中会将最新版本的数据直接更新在该行记录上(即使该版本数据未提交)，旧版本的数据全部存储在undo log上，当事务需要读取旧版本数据时通过undo log找到该版本数据返回(对于回滚事务不是依赖undo log的，而是在redo log中会记录与本事务相反的操作来完成回滚操作)
+MVCC中通过undo log实现事务的回滚和回溯获取到当前事务所在版本的数据，MVCC中会将最新版本的数据直接更新在该行记录上(即使该版本数据未提交)，旧版本的数据全部存储在undo log上，当事务需要读取旧版本数据时通过undo log找到该版本数据返回
 
 InnoDB为每一行都添加三个字段：
 - DB_TRX_ID(6B)：标示最近一次对该行做修改(update/insert)的事务的事务id
@@ -102,6 +104,16 @@ InnoDB为每一行都添加三个字段：
 - `低水位 < transaction id <= 高水位`此时判断该事务是否在该事务的数组中，在表示不可用，不在表示可用(出现这种情况的原因是可能在该事务开启前的事务有些很快提交了，而有些一直未提交)
 
 这就是可见性比较算法
+
+undo log不同于物理日志redo log，其是逻辑日志，比如delete一条记录时，undo log中会记录一条与之对应的insert记录，反之亦然
+
+当执行回滚(rollback)时，就从undo log中读取到相应的记录并回滚，其次在MVCC中进行行版本控制时也是通过undo log实现的，通过undo log分析出当前事务所在版本的记录
+
+undo log也会产生redo log，因为undo log也要进行持久化(redo log仅仅负责数据的持久化，回滚等操作还是通过redo log进行持久化的undo log实现的)
+
+InnoDB对undo log采用段(segment)方式，rollback segment称为回滚段，每个回滚段中有1024个undo log segment，每个undo操作在记录时都占用一个undo log segment。MySQL5.5之前只支持1个rollback segment也就是只能记录1024个undo log segment，在MySQL5.5开始支持128个rollback segment，也就是128 * 1024个undo log segment。undo log都默认存放在共享表空间`ibdata`，也可以自定义配置存放目录
+
+当事务提交时，InnoDB不会立即删除undo log，因为MVCC可重复读隔离级别下其他事务都是读取自己事务开始时的版本数据，因此该undo log只要被其他事务引用那么就不能被删除。如果undo log不再被任务事务引用，那么也不会立即被物理删除，而是通过后台运行的purge线程来进行回收
 
 ## 半同步下主从切换问题
 
@@ -126,7 +138,7 @@ InnoDB为每一行都添加三个字段：
   - range：范围查找
   - index：全表扫描，但扫描的是索引树
   - all：全表扫描
-  - type性能：ALL < index < range ~ index_merge < ref < eq_ref < const < system
+  - type性能：all < index < range ~ index_merge < ref < eq_ref < const < system
 - possible_keys：在该查询中可以用到的索引，但正真用到的索引在key中显示
 - key：正真被用到的索引
 - key_len：使用到的索引的字节数，可以用来判断复合索引中最左前缀匹配到那些字段
@@ -152,7 +164,7 @@ limit 15 offset 10 => (11 ~ 25)
 
 分页优化：
 
-1. 如果主键是递增的(auto_increment)，那么可以先查出主键(只查询主键是无需回表的，既可以利用覆盖索引)，然后用in，join，between，大于小于符号 方式查出具体数据
+1. 如果主键是递增的(auto_increment)，那么可以先查出主键(只查询主键是无需回表的，即可以利用覆盖索引)，然后用in，join，between，大于小于符号方式查出具体数据
 2. 对于offset很后面的内容，使用倒序(DESC)来查询
 
 ### Hash索引
