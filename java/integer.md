@@ -139,6 +139,6 @@ private static class IntegerCache {
 
 ```java
 int n1 = 1;
-Integer n2 = new String(1);
+Integer n2 = new Integer(1);
 n1 == n2  //  true
 ```
