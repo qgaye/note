@@ -10,21 +10,15 @@ git仓库正常工作所需的信息全部存放在`.git`目录下
 .
 └── .git
     │  
-    │  
     ├── branches
-    │  
     │  
     ├── COMMIT_EDITMSG    # 保存最新的commit message，Git系统不会用到这个文件，只是给用户一个参考。
     │  
-    │  
     ├── config    # 仓库的配置文件。
-    │  
     │  
     ├── description    # 仓库的描述信息，主要给gitweb等git托管系统使用。
     │  
-    │  
     ├── HEAD    # 包含了一个分支的引用，通过这个文件Git可以得到下一次commit的parent，可以理解为指针。
-    │  
     │  
     ├── hooks    # 存放一些shell脚本，可以设置特定的git命令后触发相应的脚本。
     │   │
@@ -37,15 +31,12 @@ git仓库正常工作所需的信息全部存放在`.git`目录下
     │   ├── pre-push.sample
     │   ├── pre-rebase.sample
     │   └── update.sample
-    │  
     │
     ├── index    # 二进制暂存区（stage）。
-    │  
     │  
     ├── info    # 仓库的其他信息。
     │   │  
     │   └── exclude
-    │  
     │
     ├── logs    # 保存所有更新的引用记录。
     │   │
@@ -58,7 +49,6 @@ git仓库正常工作所需的信息全部存放在`.git`目录下
     │               ├── HEAD
     │               └── master
     │  
-    │
     ├── objects    # 所有对象的存储，对象的SHA1哈希值的前2位是文件夹名称，后38位作为对象文件名。
     │   │  
     │   ├── [0-9A-F][0-9A-F]
@@ -67,7 +57,6 @@ git仓库正常工作所需的信息全部存放在`.git`目录下
     │   └── pack    # 以压缩形式（.pack）存储许多对象的文件，附带索引文件（.idx）以允许它们被随机访问。
     │       ├── pack-a62b75ba184ef8686604b5f2f366f958022a2fb5.idx
     │       └── pack-a62b75ba184ef8686604b5f2f366f958022a2fb5.pack
-    │  
     │  
     └── refs    # 具体的引用，Reference Specification。
         │

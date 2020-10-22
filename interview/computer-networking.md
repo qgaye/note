@@ -570,6 +570,9 @@ HTTPS其实是HTTP over SSL/TLS，即在应用层HTTP和传输层TCP中加了个
 
 HTTPS请求分为TCP三次握手(1.5RTT)，TLS四次握手(2RTT)和HTTP发送请求和接收响应(1RTT)，总计9倍的时延，还是非常耗时的。在HTTP3.0中，基于QUIC将TCP和TLS的握手结合起来从7次握手减少为3次，从而降低时延
 
+为了让多个域名复用同一个ip地址，在HTTP服务器上引入了虚拟主机的概念，即服务器会根据HTTP请求头中的Host(Host中存放着域名)来分配给不同的域名(虚拟主机)来处理，但在HTTPS服务器上，因为HTTPS协议需要客户端首先与服务器建立SSL连接，建立SSL连接是需要请求服务器证书的，而证书又是颁发给域名的，在客服端请求服务器时服务器无法知晓客户端所请求的域名，因此也就无法根据不同的域名返回不同的证书
+SNI(Server Name Indication)扩展解决了这个问题，在SSL建立前的ClientHello请求中在Server Name Indication extension中会带上请求的域名明文，于是服务器就能够根据这个域名返回对应的证书了，SNI是需要客户端和服务端同时支持的
+
 ## FTP
 
 FTP(File Transfer Protocol)叫作文件传输协议，处在TCP之上的应用层协议

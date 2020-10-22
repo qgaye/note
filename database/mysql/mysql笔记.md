@@ -1504,7 +1504,7 @@ select distinct id from t1
 
 内存表指的是使用Memory引擎的表，Memory默认使用的是Hash索引，即将索引值进行hash后存储
 
-![Memory引擎表存储结构](../pics/mysql_memory_table.png)
+![Memory引擎表存储结构](../pics/mysql_memoryrollback segment_table.png)
 
 - InnoDB引擎将数据放在主键索引上，其他索引上保存的是主键。这种方式称之为索引组织表(Index Organizied Table)
 - Memory引擎将数据单独存放，而索引上保存的是数据的内存地址。这种方式称之为堆组织表(Heap Organizied Table)
