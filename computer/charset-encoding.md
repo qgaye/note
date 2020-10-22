@@ -77,9 +77,14 @@ String s3 = "hello👴";
 s3.length();    // 7，因为emoji需要4字节存储，故占2个代码单元
 ```
 
-那么如何在字符串中包含辅助平面字符的情况下获取到正确的字符`length()`和`charAt()`的值呢？，在Java1.5后就提供了基于码点(code point)的方法，这些方法参数中的index使用的是代码单元(code point)
+那么如何在字符串中包含辅助平面字符的情况下获取到正确的字符`length()`和`charAt()`的值呢？·在Java1.5后就提供了基于码点(code point)的方法，这些方法参数中的index使用的是代码单元(code point)
 
 ```java
 public int codePointAt(int index)
 public int codePointCount(int beginIndex, int endIndex)
 ```
+
+## 参考
+
+- [彻底弄懂Unicode编码](https://liyucang-git.github.io/2019/06/17/%E5%BD%BB%E5%BA%95%E5%BC%84%E6%87%82Unicode%E7%BC%96%E7%A0%81/)
+- [一个Java字符串中到底有多少个字符?](https://colobu.com/2019/01/04/how-many-charactors-in-a-java-string/)
