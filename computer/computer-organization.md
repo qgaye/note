@@ -122,3 +122,165 @@ rbp寄存器：基址指针寄存器，其中的指针永远指向系统栈最�
 因为函数调用依赖于栈，而内存中的栈的大小又是有限的，那么当函数调用层次过深时(比如无限递归)就会导致栈溢出(stack overflow)
 
 通过函数内联优化(Inline)：在编译时直接将函数具体代码插入到调用的位置来替换对应的函数调用，比如调用add函数直接修改为a + b，从而使得CPU需要执行的指令数变少了，也无需根据地址跳转到调用的函数处，压栈和出栈也不再需要，但是如果这个函数是个通用函数，被多处调用，那么内联就会导致程序大小膨胀
+
+## ELF和链接
+
+```txt
+// add.c
+    int add(int a, int b) 
+    {
+0:                                         push rbp
+1:                                         mov rbp,rsp
+        return a + b;
+12:                                        pop rbp
+13:                                        ret    
+    }
+```
+
+```txt
+// main.c
+    int main() 
+    {
+0:                                         push rbp
+1:                                         mov rbp,rsp
+        int c = add(1, 2);                 
+25:                                        call 2a <main+0x2a>
+2a:                                                        
+        return 0;
+12:                                        pop rbp
+13:                                        ret    
+    }
+```
+
+add.c和main.c文件经过编译器和汇编器后(`gcc -c`)会分别生成目标代码(add.o和main.o)，但此时main.o是无法运行的，因为main.o中是无法知道处在add.c文件中的add函数的内存地址，所以目标代码中call指令跟着的是下一行行号，并且add.o和main.o所在的行号是相同的，也就是汇编代码中存在重复的内存地址。此时就需要通过链接器将目标文件链接后得到一个可执行文件
+
+### ELF
+
+在Linux下可执行文件和目标文件使用的都是一种ELF(Execuatable and Linkable File Format)的文件格式，称作可执行与可链接文件格式，其中不但存放了编译成的汇编指令，还包括一些其他数据
+
+- file header：文件头，用来表示这个文件的基本属性，比如是否可执行，对应的CPU，操作系统等
+- .text：代码段，用来保存程序的代码和指令
+- .data：数据段，用来保存程序中已初始化的全局和静态变量
+- .rel.text：重定位表，用来保存当前文件中哪些跳转地址是还不知道的，比如main.o文件中的main函数调用的add函数，在链接前是不知道需要跳转到的内存地址的
+- .symtab：符号表，保存了当前文件中定义的函数和变量对应的地址
+
+在Windows下和ELF功能相同的文件格式叫做PE(Portable Executable Format)，因为Linux下装载器只能解析ELF格式而不能解析PE格式，因此Windows下的可执行文件到了Linux下无法执行了
+
+### 静态链接(Static Link)
+
+静态链接会将所有目标文件合并成一个ELF文件，将各个目标文件的`.text`，`.data`等段进行合并，并生成全局符号表，然后根据全局符号表和各个目标文件中的重定位表调整合并后的汇编代码中的地址
+
+```txt
+// 链接成的可执行文件
+    int add(int a, int b) 
+    {
+6b0:                                         push rbp
+6b1:                                         mov rbp,rsp
+        return a + b;
+6c2:                                         pop rbp
+6c3:                                         ret    
+    }
+00000000000006c4 <main>:
+    int main() 
+    {
+6c4:                                         push rbp
+6c5:                                         mov rbp,rsp
+        int c = add(1, 2);                 
+6e9:                                         call 6b0 <add>                                                       
+        return 0;
+70c:                                          pop rbp
+70d:                                          ret    
+    }
+```
+
+经过静态链接后，main.o和add.o被合并成了一个ELF文件，因为都在同一文件中，因此不再会出现重复的地址的问题，此外在main函数中调用add函数也不再是call下一条指令的行号了，而是替换为了add函数入口地址
+
+### 动态链接(Dynamic Link)
+
+在动态链接的过程中要链接的不再是存储在硬盘上的目标文件代码，而是加载到内存中的共享库，所以动态链接是在运行时才能确定函数的跳转地址的。在Windows下.dll文件(Dynamic-Link Libary)和Linux下的.so文件(Shard Object)都是动态链接库
+
+对于动态链接库来说有个很重要的一点就是它们必须是地址无关的，也就是动态链接库中的代码无论加载在哪个内存地址都能够正常执行，否则就是地址相关的，比如利用到绝对地址。为了实现地址无关，就需要使用相对地址，相对地址表示的是相对于当前指令偏移量的内存地址，因而只要动态链接库是放在一段连续的虚拟内存地址中就一定能够被正确调用执行
+
+`gcc [file.c] -fPIC -shared -o [file.so]`将.c文件编译成.so动态链接库，其中-fPIC参数就是Position Independent Code的意思，即编译成地址无关代码
+
+因为动态链接链接的是内存中的动态链接库，所以被链接的函数跳转地址是由运行时才能确定的，可以先假设动态链接在编译时将跳转地址设为一个无意义值(比如`call 0xffffffff`)，等到依赖的动态链接库加载到内存后将call后的跳转地址进行修改，但是这里就存在两个问题：
+1. 现代操作系统不允许修改代码段(.text)，只能修改数据段(.data)
+2. 如果不光调用的函数在动态链接库中，而函数自身也在动态链接库中(即一个动态链接库中的函数调用了另一个动态链接库中的函数)，如果通过修改跳转地址的方式也就是引入了绝对地址，导致代码不再是地址无关的，从而动态链接库就失效了
+
+因此call指令的跳转地址只能回写到数据段中而不是通过回写代码段上的跳转地址，于是编译阶段链接器会为每个调用的动态链接库中的函数生成一段额外的代码段，通过这个额外的代码段的逻辑来从数据段获取到动态链接库中的函数地址从而完成调用，所以整个动态链接的逻辑总结来说需要一个存放动态链接库中的函数的真正地址的表GOT(Global Offset Table，全局偏移表)和一个存放额外生成的代码段的表PLT(Procedure Link Table，程序链接表)
+
+```txt
+可执行文件                   PLT表                      GOT表                 printf函数所在的动态链接库在内存中的地址          
+main:                      printf@plt:                printf@got:           0xf7e835f0 <printf>:
+    call printf@plt ---->      jmp *(printf@got) ---->     0xf7e835f0 ---->     // printf汇编代码
+```
+
+main函数中将调用printf函数编译为调用PLT表中的printf@plt函数，而printf@plt会跳转到GOT表中存放动态链接库printf函数在内存中的真正的地址，从而完成printf函数调用，整个只是个粗略的流程，接着来细看
+
+PLT表中的逻辑会跳转到GOT表来找到真正的地址完成函数调用，因此也就是在调用PLT表中的逻辑(也就是额外生成的代码段)前就要求GOT表中必须初始化完所有的动态链接库中的函数的真正地址，这毫无疑问会大大增加进程启动时间，因此应该让GOT表中的数据延迟加载，当PLT函数第一次执行后再去初始化GOT表中对应函数的地址数据(延迟重定位)
+
+```txt
+void printf@plt 
+{
+address_good:
+    jmp *(printf@got)   // 链接器在编译阶段会将printf@got的值填为下一条指令lookup_printf的地址(printf@got在GOT表中)
+lookup_printf:
+    // GOT表中负责查找printf函数所在的内存地址并填写到printf@got中
+    goto address_good
+}
+```
+
+在第一次调用printf@plt函数时，首先jmp跳转到GOT表中的printf@got处填写的地址处，因为链接器在编译期会将printf@got值填为printf@plt中jmp的下一条指令地址，即进入了lookup_printf处，这里会调用函数将GOT表中的printf@got值填为printf函数真正的物理地址，然后通过goto重新来到printf@plt开始处的jmp指令，此时跳转到printf@got填写的指针处也就是printf的真正地址了。在PLT表实现中，lookup_printf这段查找动态链接库中的函数真正地址的逻辑被抽离成common@plt作为公共入口，而不再是每个@plt项都单独有一份重复的指令，common@plt被放在PLT表头，即`plt[0]`
+
+```txt
+<common@plt>:
+    pushl 0x80496f0
+    jmp *(0x80496f4)   // 0x80496f4属于GOT表中的一项，对应的是_dl_runtime_resolve函数，负责完成函数地址重定位
+<printf@plt>:
+    jmp *(0x80496f8)   // 0x80496f8指的是GOT表中的printf@got
+    push $0x00
+    jmp common@plt
+```
+
+来看一下common@plt中的逻辑，首先pushl将地址压栈，也就是将最后调用动态链接库中的函数所需的参数压栈，然后jmp跳转，0x80496f4属于GOT表中的一项，进程还没运行时值是0x00000000，当程序运行起来后值被填充，这个值也就是_dl_runtime_resolve函数所在地址，该函数负责了查询动态链接库中的函数的真正地址并回填到GOT表中对应项上，因此所有动态链接库函数第一次调用时都是xxx@plt -> common@plt -> _dl_runtime_resolve函数的调用逻辑
+
+因为common@plt逻辑是PLT表中所有函数共用的，那么_dl_runtime_resolve函数是如何知道要查询的是哪个动态链接库的函数并正确回填到GOT表中呢(此例中是printf)，答案就是在跳转到common@plt前所在的xxx@plt中的push指令，printf@plt中push $0x00，这个0x00对应的是printf函数在.rel.plt段中偏移量，_dl_runtime_resolve函数根据偏移量和.rel.plt段就能够定位到.rel.plt段中的具体项，这个项中包括了要解析的动态链接库的函数和offset字段，offset字段也就是对应的GOT表中项的地址，_dl_runtime_resolve根据offset就能回填重定位的真正地址
+
+_dl_runtime_resolve函数是何时被写入到GOT表中的呢？在进程还未运行时值为0x00000000，当程序被装载但还没执行前，会先跳转到动态链接器(ld-linux-xxx)执行，其会负责将_dl_runtime_resolve地址写到GOT表中。GOT表中除了每个函数占用一个GOT表项外，GOT还保留的3个公共表项，也就是GOT表的前3项，在编译时后两项都置为0x00000000，直到启动后由动态链接器填充
+- `got[0]`：本ELF的动态段(.dynamic段)的装载地址
+- `got[1]`：本ELF的link_map数据结构描述符地址
+- `got[2]`：_dl_runtime_resolve函数的地址
+
+最后将PLT和GOT表进行抽象描述：
+
+```txt
+plt[0]:
+    pushl got[1]
+    jmp *got[2]
+plt[n]:   // n >= 1
+    jmp *got[n + 2]   // GOT前3项为公共项，第3项开始才是函数项，plt[1]对应的GOT[3]，依次类推
+    push (n - 1) * 8
+    jmp plt[0]
+
+got[0] = .dynamic段地址
+got[1] = link_map地址(编译时填充0x00000000)
+got[2] = _dl_runtime_resolve函数地址(编译时填充0x00000000)
+got[n + 2] = plt[n] + 6   // 编译时填充为plt[n]代码段的第二条指令，在函数第一次被调用后会被_dl_runtime_resolve函数填充为动态链接库函数的真正地址
+```
+
+第一次调用printf函数(进行动态重定位)：调用printf函数处编译为call printf@plt，进入printf@plt中jmp指令跳转到printf@got值中的地址处，因为在编译时被填充为printf@plt的第二条指令地址也就是jmp跳转到了printf@plt的下一条指令push(printf@got不是函数而是GOT表中的一项值)，push指令后jmp跳转到`plt[0]`即common@plt，其中jmp指令跳转到`got[2]`即_dl_runtime_resolve函数，该函数负责查找printf函数真正的地址，并回填到GOT表中printf@got项，然后完成printf函数的调用
+
+第二次调用printf函数(已完成动态重定位)：调用printf函数处编译为call printf@plt，进入printf@plt中jmp指令跳转到printf@got值中的地址处，因为此时printf@got已经被_dl_runtime_resolve函数回填了printf真正的地址，于是jmp指令就是直接跳转到了printf函数所在的内存地址，直接完成函数调用
+
+- [聊聊Linux动态链接中的PLT和GOT（１）——何谓PLT与GOT](https://blog.csdn.net/linyt/article/details/51635768)
+- [聊聊Linux动态链接中的PLT和GOT（２）——延迟重定位](https://blog.csdn.net/linyt/article/details/51636753)
+- [聊聊Linux动态链接中的PLT和GOT（３）——公共GOT表项](https://blog.csdn.net/linyt/article/details/51637832)
+- [聊聊Linux动态链接中的PLT和GOT（4）—— 穿针引线](https://blog.csdn.net/linyt/article/details/51893258)
+
+### 静态链接和动态链接的优缺点
+
+- 静态链接生成的文件装载速度快，执行速度也比动态链接的快，因为不需要在运行是完成函数地址的重定位
+- 静态链接生成的文件体积比动态链接生成的大，因为静态链接中直接填写了正确的函数调用地址，被依赖的函数文件必须被包含在静态链接生成的文件中，而动态链接则不需要
+- 多个静态链接生成的文件可能包含相同的公共代码，不但文件大小膨胀，还会增加内存占用造成浪费，增加页面交换和调页的频率
+- 动态链接不仅仅实现了代码共享，更重要的是模块化，动态链接库和可执行文件不耦合，只要定义的接口不变，那么动态链接库中函数具体逻辑的变化对可执行文件是无感的，而静态链接下一旦函数逻辑发生变化就必须将所有链接该库的文件全部重新编译
+- 动态链接生成的文件是不是自完备的，必要要求依赖的动态链接库也存在，并且由于动态链接是在运行时才完成函数地址的重定位，因此如果依赖的动态链接库不存在或已不兼容，会导致程序运行错误
