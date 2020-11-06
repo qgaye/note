@@ -195,6 +195,8 @@ add.c和main.c文件经过编译器和汇编器后(`gcc -c`)会分别生成目�
 
 经过静态链接后，main.o和add.o被合并成了一个ELF文件，因为都在同一文件中，因此不再会出现重复的地址的问题，此外在main函数中调用add函数也不再是call下一条指令的行号了，而是替换为了add函数入口地址
 
+在Windows下.lib文件和Linux下.a文件都是静态链接库
+
 ### 动态链接(Dynamic Link)
 
 在动态链接的过程中要链接的不再是存储在硬盘上的目标文件代码，而是加载到内存中的共享库，所以动态链接是在运行时才能确定函数的跳转地址的。在Windows下.dll文件(Dynamic-Link Libary)和Linux下的.so文件(Shard Object)都是动态链接库
