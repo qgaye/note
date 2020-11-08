@@ -430,3 +430,89 @@ public double sqrt(double x, double precision) {
     return -1.0;
 }
 ```
+
+## 前缀树
+
+```java
+class Trie {
+    class Node {
+        boolean isEnd = false;
+        Node[] next = new Node[26];
+    }
+    Node root;
+    public Trie() {
+        root = new Node();
+    }
+    public void insert(String word) {
+        Node cur = root;
+        for (int i = 0; i < word.length(); i++) {
+            if (cur.next['z' - word.charAt(i)] == null) cur.next['z' - word.charAt(i)] = new Node();
+            cur = cur.next['z' - word.charAt(i)];
+        }
+        cur.isEnd = true;
+    }
+    public boolean search(String word) {
+        Node cur = root;
+        for (int i = 0; i < word.length(); i++) {
+            if (cur.next['z' - word.charAt(i)] == null) return false;
+            cur = cur.next['z' - word.charAt(i)];
+        }
+        return cur.isEnd;
+    }
+    public boolean startsWith(String prefix) {
+        Node cur = root;
+        for (int i = 0; i < prefix.length(); i++) {
+            if (cur.next['z' - prefix.charAt(i)] == null) return false;
+            cur = cur.next['z' - prefix.charAt(i)];
+        }
+        return true;
+    }
+}
+```
+
+## 线段树
+
+```java
+class SegmentTree {
+    int[] segment;
+    int[] data;
+    public SegmentTree(int[] arr) {
+        data = arr;
+        segment = new int[data.length * 4];
+        buildSegmentTree(data, 0, data.length - 1, 0);
+    }
+    private void buildSegmentTree(int[] data, int left, int right, int index) {
+        if (left == right) segment[index] = data[left];
+        else {
+            int mid = left + (right - left) / 2;
+            buildSegmentTree(data, left, mid, index * 2 + 1);
+            buildSegmentTree(data, mid + 1, right, index * 2 + 2);
+            segment[index] = segment[index * 2 + 1] + segment[index * 2 + 2];   // 此处合并的逻辑可以按照需要修改，这里是求和即区间和
+        }
+    }
+    public void update(int dataIndex, int val) {
+        update(dataIndex, val, 0, data.length - 1, 0);
+    }
+    private void update(int dataIndex, int val, int left, int right, int index) {
+        if (left == right) segment[index] = val;
+        else {
+            int mid = left + (right - left) / 2;
+            if (dataIndex <= mid) update(dataIndex, val, left, mid, index * 2 + 1);
+            else update(dataIndex, val, mid + 1, right, index * 2 + 2);
+            segment[index] = segment[index * 2 + 1] + segment[index * 2 + 2];
+        }
+    }
+    public int query(int queryL, int queryR) {
+        return query(queryL, queryR, 0, data.length - 1, 0);
+    }
+    private int query(int queryL, int queryR, int left, int right, int index) {
+        if (queryL == left && queryR == right) return segment[index];
+        else {
+            int mid = left + (right - left) / 2;
+            if (queryR <= mid) return query(queryL, queryR, left, mid, index * 2 + 1);
+            else if (queryL > mid) return query(queryL, queryR, mid + 1, right, index * 2 + 1);
+            else return query(queryL, mid, left, mid, index * 2 + 1) + query(mid + 1, queryR, mid + 1, right, index * 2 + 2);
+        }
+    }
+}
+```
