@@ -1,17 +1,5 @@
 # Mac杂录
 
-## 通过brew安装openjdk
-
-[AdoptOpenJDK GitHub](https://github.com/AdoptOpenJDK/homebrew-openjdk)
-
-```bash
-# 直接安装最新版本的openjdk
-brew cask install adoptopenjdk
-# 安装指定版本的openjdk
-brew tap AdoptOpenJDK/openjdk
-brew cask install [adoptopenjdk8 | adoptopenjdk9 | 更多选择查看AdoptOpenJDK]
-```
-
 ## 配置命令行代理
 
 brew/git下载时往往需要终端代理，例子中使用的是ClashX做的代理

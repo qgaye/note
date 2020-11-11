@@ -112,3 +112,12 @@
 
 1. `Help -> Edit Custome Properties...`
 2. 在打开的文件中添加`idea.case.sensitive.fs=true`
+
+### 工具栏中添加前进和后退按钮
+
+1. `Settings -> Appearence & Behavior -> Menus and Toolbars -> Navigation Bar Toolbar`，选中`Toolbar Run Actions`后点击最上方添加按钮，选择`Add Actions...`
+2. `Main menu -> Navigate`，然后选中Back和Forward两个选项后点击OK完成
+
+![打开toolbar run actions](../pics/toolbar_run_actions.png)
+
+![添加back和forward按钮](../pics/add_back_and_forward_button.png)
