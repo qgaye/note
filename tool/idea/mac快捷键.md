@@ -1,27 +1,18 @@
-# IDEA常用快捷键（MAC）
+# IDEA实用快捷键（MAC）
 
-| 快捷键 | 功能 |
-|:-:|:-:|
-| `Command + Shift + Enter` | 自动换行，自动补全代码 |
-| `Command + N` | 自动生成getter和setter等方法 |
-| `Command + Option + 方向键` | 光标上/下一处所在位置 |
-| `Command + Option + L` | 对文件格式化代码 |
-| `Control + O` | 覆盖方法 |
-| `Control + J` | 显示该变量，类，方法的文档内容 |
-| `Control + H` | 显示当前类的结构 |
-| `Command + /` | 注释改行代码 |
-| `Command + P` | 方法参数提示 |
-| `Command + F12` | 显示方法列表 |
-| `Command + O` | 全局类搜索 |
-| `Command + R` | 运行 |
-| `Command + D` | 调试 |
-| `Shift + Option + R` | 运行当前文件程序 |
-| `Shift + Option + D` | 调试当前文件程序 |
-| `Shift + Command + [` | 切换到前一个Tab |
-| `Shift + Command + ]` | 切换到后一个Tab |
-| `Shift + Shift` | Search Everywhere |
-| `Alt + F12` | 调出Terminal |
-| `Option + Command + <-` | 回到光标上次所在位置 |
-| `Option + Command + ->` | 回到光标下次所在位置 |
+- `Shift + Shift` Search Everywhere
+- `Command + O` 全局类搜索
+- `Command + [` 光标上一处所在位置
+- `Command + ]` 光标下一处所在位置
+- `Command + Option + L` 对文件格式化代码
+- `Command + N` 自动生成getter/setter/constructor等方法
+- `Command + H` 显示当前类的继承关系
+- `Command + J` 插入自定义动态代码模版
+- `Command + F12` 显示当前类的所有方法
+- `Shift + Command + E` 带代码展示的最近打开文件列表
+- `Shift + F6` 重命名文件/类/方法/变量名
+- `Shift + Command + [` 切换到前一个Tab
+- `Shift + Command + ]` 切换到后一个Tab
+- `Alt + F12` 调出Terminal
 
 [更详细的IDEA快捷键](https://github.com/judasn/IntelliJ-IDEA-Tutorial/blob/master/keymap-mac-introduce.md)
