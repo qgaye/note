@@ -9,6 +9,7 @@
 - `Command + H` 显示当前类的继承关系
 - `Command + J` 插入自定义动态代码模版
 - `Command + F12` 显示当前类的所有方法
+- `Control + O` 显示可重写的方法
 - `Shift + Command + E` 带代码展示的最近打开文件列表
 - `Shift + F6` 重命名文件/类/方法/变量名
 - `Shift + Command + [` 切换到前一个Tab
