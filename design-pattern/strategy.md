@@ -15,10 +15,6 @@ public interface Startegy {
 }
 // 具体策略实现
 public class AddStartegy implements Startegy {
-    private Startegy startegy;
-    public AddStartegy(Startegy startegy) {
-        this.startegy = startegy;
-    }
     @Override
     public void calculate(int a, int b) {
         return a + b;
@@ -26,10 +22,6 @@ public class AddStartegy implements Startegy {
 }
 // 具体策略实现
 public class SubtractStartegy implements Startegy {
-    private Startegy startegy;
-    public SubtractStartegy(Startegy startegy) {
-        this.startegy = startegy;
-    }
     @Override
     public void calculate(int a, int b) {
         return a - b;

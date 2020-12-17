@@ -7,7 +7,6 @@
 ## 5种实现
 
 - 将构造方法私有化，从而使得外部无法自行`new`出实例
-
 - 确保该类中只存在一个实例对象
 
 ### 饿汉模式
@@ -16,8 +15,7 @@
 
 ```java
 public class Singleton {
-     private Singleton (){
-     }
+     private Singleton() {}
      private static Singleton instance = new Singleton();
      public static Singleton getInstance() {  
          return instance;  
@@ -31,8 +29,7 @@ public class Singleton {
 
 ```java
 public class Singleton {  
-      private Singleton (){
-      }
+      private Singleton() {}
       private static Singleton instance;  
       public static Singleton getInstance() {  
           if (instance == null) {  
@@ -49,8 +46,7 @@ public class Singleton {
 
 ```java
 public class Singleton {  
-      private Singleton (){
-      }
+      private Singleton() {}
       private static Singleton instance;  
       public static synchronized Singleton getInstance() {  
           if (instance == null) {  
@@ -96,8 +92,7 @@ public class Singleton {
 
 ```java
 public class Singleton { 
-    private Singleton(){
-    }
+    private Singleton() {}
     public static Singleton getInstance(){  
         return SingletonHolder.sInstance;  
     }  
