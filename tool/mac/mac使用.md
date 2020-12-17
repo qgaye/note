@@ -146,23 +146,18 @@ sudo spctl --master-disable
 
 ## Mac下.DS_Store文件
 
-### 什么是`.DS_Store`
-
 `.DS_Store`是Mac OS保存文件夹的自定义属性的隐藏文件，如文件的图标位置或背景色，相当于Windows的`desktop.ini`
 
-### 禁止`.DS_Store`生成
 
 ```bash
+# 禁止.DS_Store生成
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE
-```
 
-### 恢复`.DS_Store`生成
-
-```bash
+# 恢复`.DS_Store`生成
 defaults delete com.apple.desktopservices DSDontWriteNetworkStores
 ```
 
-### 删除所有目录下的`.DS_Store`
+删除所有目录下的`.DS_Store`
 
 ```bash
 sudo find / -name ".DS_Store" -depth -exec rm {} \;
@@ -217,4 +212,16 @@ defaults write com.apple.dock springboard-rows Default defaults write com.apple.
 ## Mac默认使用F1～12功能
 
 ![Mac的F1～12](../pics/mac_change_fn.png)
+
+## 加速Time Machine备份速度
+
+MacOS对Time Machine备份过程中占用的系统资源做了限制，可以通过以下命令强制关闭限制，以加速备份速度
+
+```bash
+# 强制关闭限流
+sudo sysctl debug.lowpri_throttle_enabled=0
+# 打开限流
+sudo sysctl debug.lowpri_throttle_enabled=1
+```
+
 

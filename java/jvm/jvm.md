@@ -142,7 +142,7 @@ Exception table:
 
 finally可以保证在try和catch代码块出现异常后都一定执行finally代码块，其原理也是生成异常表中的一条记录，该记录监控try和catch代码块范围的索引，对任何异常(any)进行捕获然后跳转到异常处理器，即finally代码块进行执行。此外还需要保证正常执行下try和catch代码块后也需要执行finally块，因此Java编译器在编译时会在try代码块和catch代码块下各自复制一份finally代码块，从而保证正常执行下(即顺序执行)也能执行到finally代码块
 
-![try-catch-finally字节码](../pics/try-catch-finally-bytecode.png)
+![try-catch-finally字节码](../pics/try_catch_finally_bytecode.png)
 
 因为catch代码块抛出异常后，在finally代码块中只会抛出catch抛出的异常而丢弃了try代码块中抛出的异常，因此在Java7中引入Suppressed异常来允许抛出的异常可以附带多个异常的信息，但因为finally代码块中并没有来自try代码块中的异常引用，因此就需要在catch代码块中完成异常信息的附带，使用起来非常繁琐
 
