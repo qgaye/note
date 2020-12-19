@@ -109,8 +109,13 @@ public class Singleton {
 ```java
 public enum Singleton {
     INSTANCE;
-    // 一些INSTANCE的方法，通过Singleton.INSTANCE.method方式调用
+    // 通过Singleton.INSTANCE.getInstance()方式调用
+    public Singleton getInstance() {
+        return INSTANCE;
+    }
 }
 ```
 
+`enum Singleton`被编译为class后继承`Enum`类，其只有一个调用父类`Enum`的构造函数，签名为`Enum(String name, int ordinal)`，通过反射获取到该有参构造函数后使用`newInstance()`是无法创建对象的，因为`Constructor.newInstance()`中对被创建的类进行校验，如果是ENUM修饰的则会抛出异常，反射创建失败，从而保证了无法通过反射调用构造函数创建出不同的对象
 
+此外因为enum的序列化和反序列化是不通过反射实现的，序列化通过写入枚举对象的name，反序列化通过name查找到对应的枚举对象，并且序列化和反序列化是无法被自定义的，从而保证了无法通过反序列化创建出不同的对象

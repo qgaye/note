@@ -161,9 +161,22 @@ ApplicationClassLoader的父类加载器为ExtensionClassLoader，而ExtensionCl
 
 当然可以通过自定义类继承ClassLoader来使用自己的类加载策略，而不是双亲委派模型
 
-JDBC中破坏了双亲委派模型的原因：
+比如JDK核心包中的SPI(Service Provider Interface)机制的ServiceLoader，ServiceLoader按双亲委派模型由BootstrapClassLoader加载，根据类加载机制类引用的其他类也由该类的类加载加载，即比如MySQL的驱动类也应该由BootstrapClassLoader加载，但是不同类加载器的访问classpath权限也不同(BootstrapClassLoader为JDK/JRE下的lib目录，ExtensionClassLoader为JDK/JRE下的ext目录，ApplicationClassLoader为用户指定路径)，因此BootstrapClassLoader是无法加载第三方的Driver驱动类，因此就要打破双亲委派机制来使得类能够正确加载
 
-因为Driver接口是JDK中定义的，而其具体实现是由厂家实现的，但根据类加载机制，当被加载类1引用了别的类2时类1和类2都会使用类1的类加载器加载，类1Driver在JDK中，而具体实现类2在其他包中，那么由于类1在BoostarpClassLoader中加载，而BoostarpClassLoader中找不到类2，因此会加载失败
+```java
+public class ServiceLoader {
+    public static <S> ServiceLoader<S> load(Class<S> service) {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        return ServiceLoader.load(service, cl);
+    }
+}
+```
+
+在ServiceLoader类中的load方法即通过`Thread.currentThread().getContextClassLoader()`获取到当前线程的类加载器，即ApplicationClassLoader来完成类加载
+
+- `ClassLoader.getSystemClassLoader()` 获取到负责加载用户路径上的类加载器，默认是ApplicationClassLoader
+- `Thread.currentThread().getContextClassLoader()` 获取到于当前线程绑定的ClassLoader，默认从父线程继承，如果没有被重新设置的话就是ApplicationClassLoader，可用于破坏双亲委派机制，比如在由非ApplicationClassLoader加载的类中加载用户路径下的类
+- `Clazz.getClass().getClassLoader()` 获取到加载该类的类加载器
 
 注：当A类分别被两个不同的ClassLoader加载进了JVM(这两个ClassLoader肯定不能是父类调用关系)，此时如果被不同类加载器加载进来的之间没有联系。引用，那么是可以正常运行的，但是如果发生A = A，两个A是来自不同类加载器，JVM会校验它们的类加载是否相同，如果不同会报错(就是同一个类不同的类加载器加载进来后，它们是不同的类型，因此在A = A时就无法做强制类型转换)
 
