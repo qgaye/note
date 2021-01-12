@@ -121,3 +121,10 @@
 ![打开toolbar run actions](../pics/toolbar_run_actions.png)
 
 ![添加back和forward按钮](../pics/add_back_and_forward_button.png)
+
+## 优化自动导包
+
+1. `Settings -> Editor -> General -> Auto Import`
+2. 勾选上`Add unambiguous imports on the fly`(自动优化导入的包)和`Optimize imports on the fly`(自动去除不再使用的包)
+
+![auto import](../pics/auto_import.png)
