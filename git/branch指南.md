@@ -25,8 +25,9 @@ git checkout -  # 切换到上一个分支
 
 ```bash
 git branch [branch]  # 新建branch的分支
-git branch [branch] [commit]  #基于commit新建branch分支
+git branch [branch] [commit]  # 基于commit新建branch分支
 git checkout -b [branch]  # 新建branch分支，并切换到该分支
+git checkout -b [new branch] [old branch]   # 基于指定分支新建分支，也可以基于远程分支origin/branch(需先fetch下来)来创建新本地分支
 ```
 
 ## 创建远程分支
