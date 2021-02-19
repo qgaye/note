@@ -11,6 +11,7 @@ maven对构建过程进行了统一抽象，定义了3套互相独立的生命�
 插件的目标(goal)和生命周期中的一个构建阶段绑定，比如maven-clean-plugin的clean这个目标和生命周期中clean构建阶段绑定，当maven执行到clean阶段时会调用maven-clean-plugin插件的clean目标(可以将插件理解为一个类，而goal即是类中的一个方法，这个方法和maven生命周期中某个阶段绑定，当到了这个阶段时会调用这个方法)
 
 插件目标的执行顺序是根据绑定的构建阶段的顺序来顺序执行的，如果多个插件目标被绑定到同一个阶段，那么根据插件在pom中声明的先后顺序执行
+
 ## dependence
 
 通过`<dependency>`标签来引入一个依赖，其中`groupId, artifactId`标签是必填的，其他的都是可选的
