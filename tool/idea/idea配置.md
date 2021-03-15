@@ -128,3 +128,10 @@
 2. 勾选上`Add unambiguous imports on the fly`(自动优化导入的包)和`Optimize imports on the fly`(自动去除不再使用的包)
 
 ![auto import](../pics/auto_import.png)
+
+## 在project中展示缩进线
+
+1. `Appearence & Behavior -> UI Options`
+2. 勾选上`show tree indent guides`
+
+![show indentation](../pics/show_indentation.png)
