@@ -191,10 +191,10 @@ select/poll/epoll都是IO多路复用的具体实现，好处就是单个process
 首先会维护一个大小1024的bitmap来标记FD，然后将这个bitmap拷贝到内核空间，然后系统发现置位的数据来了，那么就会在bitmap中标记并返回(用户调用select阻塞直到内核返回)，接着用户for循环O(n)找出系统说的来数据的FD，读取，然后重新标记一次bitmap，再拷贝到内核空间，周而复始
 
 select存在的问题：
-- bitmap最大1024，即一次只能同时管理1024个fd
-- 每次拷贝到内核空间的bitmap不可重用，返回后要新建一个再拷贝
-- 每次都需要将所有fd信息(bitmap/pollfd)从内核态拷贝到用户态
-- O(n)次遍历，每次select返回后都需要for循环所有fd
+1. bitmap最大1024，即一次只能同时管理1024个fd
+2. 每次拷贝到内核空间的bitmap不可重用，返回后要新建一个再拷贝
+3. 每次都需要将所有fd信息(bitmap/pollfd)从内核态拷贝到用户态
+4. O(n)次遍历，每次select返回后都需要for循环所有fd
 
 ### poll
 
