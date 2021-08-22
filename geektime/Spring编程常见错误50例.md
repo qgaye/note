@@ -25,3 +25,5 @@ basePackages可以定义多个值`@ComponentScan(basePackages = {"package1", "pa
 方法1：通过`@Autowired`注入`ApplicationContext`，然后再通过`applicationContext.getBean(XXX.class)`的方式每次去获取Bean
 方法2：直接定义个返回值为需要注入的类的方法，并标记`@Lookup`，这个方法的实现不重要，因为最后会通过代理的方式通过BeanFactory获取到Bean
 
+
+
