@@ -72,7 +72,7 @@ MySQL整体来看有两层，引擎层中InnoDB引擎负责管理redo log，而�
 1. 第一阶段：InnoDB将该事务回滚段设为prepare状态，并持有prepare_commit_mutex，然后写入redo log，bin log不进行任何操作
 2. 第二阶段：首先写入bin log。接着InnoDB提交该事务(清除undo log，释放锁)，写入commit标记后释放prepare_commit_mutex
 
-> 早期MyQSQL通过prepare_commit_mutex来保证同时提交，但是性能过差且不能同时其他线程不能提交。因此在MySQL5.6后一次引入了bin log组提交和redo log组提交来提升性能
+> 早期MyQSQL通过prepare_commit_mutex来保证同时提交，但是性能过差且不能同时其他线程不能提交。因此在MySQL5.6后引入了bin log组提交和redo log组提交来提升性能
 
 - 先写redo log后写bin log：redo log写入后即使数据库奔溃，数据也能正常恢复进数据库，但是当通过bin log恢复数据库时，由于bin log未被写入，因此恢复出来的数据库会比现有数据库状态少上那一条
 - 先写bin log后写redo log：当通过bin log恢复数据库时，未被持久化到数据库的数据也会被恢复(redo log没写入，因此数据库没有这条数据)
