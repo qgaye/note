@@ -109,6 +109,73 @@ kafka中读写都是以批(patch)为单位的
 1. 调用producer.close()关闭或`kill -9`暴力关闭
 2. kafka自动关闭，当这个连接在一定时间内没有任何请求，那么就会被自动关闭，这个时间由`connection.max.idles.ms`控制，默认9分钟
 
-## 
+## 幂等和事务
+
+- 最多一次（at most once）：消息可能会丢失，但绝不会被重复发送
+- 至少一次（at least once）：消息不会丢失，但有可能被重复发送
+- 精确一次（exactly once）：消息不会丢失，也不会被重复发送
+
+Kafka默认提供的交付可靠性保障是第二种，即至少一次，因为producer在提交消息后需要收到broker的应答才会认为该消息发送成功，但若网络抖动导致producer未能收到broker的应答消息，那producer就会进行重试，也就是再次发送相同的消息
+
+Kafka通过幂等性和事务达到准确一次
+
+幂等性producer：为producer设置`enable.idempotence=true`，该producer就会自动升级成幂等性producer，Kafka会自动完成消息的去重
+
+原理：producer每次启动后首先向producer申请一个全局唯一的producerID，然后producer每发一条消息后就将消息体中的sequence number + 1，在broker的内存中维护着producerID和sequence number的映射，broker收到消息后检查消息体中的seq，如果：
+- new_seq = old_seq+1: 正常消息
+- new_seq <= old_seq : 重复消息
+- new_seq > old_seq+1: 消息丢失
+
+存在的问题：
+- 其只能保证单分区上的幂等性，即一个幂等性producer只能保证某个topic下的一个分区上不出现重复消息，而无法实现多个分区的幂等
+- 其只能实现单会话上的幂等性，当producer重启后，因为producerID变了，这种幂等性就丧失了
+
+事务型producer：为producer设置`enable.idempotence=true`并设置参数`transactional.id`，此外在代码中需要显式调用`beginTransaction()`和`commitTransaction()`，并且在写入时即使事务执行失败，但Kafka并不会将已经写入底层日志中的消息删除，因此consumer还是会看到这些消息，因此需要在consumer端设置`isolation.level`参数为`read_committed`表示consumer只会读取成功提交的事务的消息
+
+## 消费组
+
+Consumer Group：Kafka提供的可扩展且具有容错性的消息者机制
+
+传统消息引擎模型：
+- 点对点模型：消息一旦被消费就会从队列中删除，并且下游多个consumer都要抢着消费消息，伸缩性很差
+- 发布订阅模型：虽然允许消息被多个consumer消费，但每个consumer必须消费订阅的主题下的所有分区，可扩展性很差
+
+而Consumer Group可以同时实现点对点模型和发布订阅模型，如果一个topic只有一个consumer group消费那就是点对点模式，如果消费组内只有一个消费组就是发布订阅模型
+
+消费组特点：
+- 一个消费组内可以由多个消费者
+- 消费组的唯一标识称为GroupID，组内的消费者共享这个ID
+- 主题的每个分区只能被组内的一个消费者消费，因此消费组中消费者的个数最好和主题的分区数相同，否则多出来的消费者会被闲置
+- 老版本Kafka将消费组的位移offset保存在zookeeper中，好处是broker端不用保存消费组的状态，但zookeeper不适合频繁进行写操作，而更新消费组位移这种大吞吐量的操作会极大拖慢zookeeper集群的性能，在新版本Kafka中将消费组位移保存在Kafka内部`__consumer_offsets`主题中
+
+消费组重平衡：
+
+触发条件：
+- 消费组内消费者数量发生变更
+- 订阅的主题数发现变更
+- 订阅的主题的分区数发生变更
+
+影响：在Rebalance过程中，所有Consumer实例都会停止消费，等待Rebalance完成，类似于JVM中的Stop The World
+
+### 位移主题
+
+老版本Kafka将位移信息保存在zookeeper中，当consumer重启后自动从zookeeper中读取位移信息即可，这种设计使得broker不需要保存位移信息，可以减少broker端需要持有的状态空间，有利于实现高伸缩性，但因为zookeeper本身不适用于频繁的写操作，而更新位移信息是高频的操作，这会导致zookeeper集群性能严重下降，因此新版本Kafka中将消费组的位移信息作为一条普通的消息提交到内部主题`_consumer_offsets`中保存
+
+为什么将位移信息写入内部topic：因为位移信息的写入要求可持久化和高吞吐量，而Kafka天然就支持可持久化和高吞吐量，那么自然无需借助外部服务，用Kafka自己解决即可
+
+- 位移主题是一个普通的主题，同样可以被手动创建，修改，删除
+- 位移主题的消息格式是kafka定义的，不可以被手动修改，若修改格式不正确，kafka将会崩溃
+- 位移主题中消息类似于KV结构，key是<Group ID，主题名，分区号>形式的三元组（位移信息其实是针对于消费组的，又因为一个分区只能被消费组下的一个消费者消费，因此位移信息无需包含消费者的标识），value可以理解为offset值
+
+当Kafka集群中的第一个Consumer程序启动时，Kafka会自动创建位移主题（也可以手动创建），分区数依赖于broker端的`offsets.topic.num.partitions`，默认50，副本数依赖于broker端的`offsets.topic.replication.factor`，默认为3
+
+提交位移分为手动提交和自动提交，通过`enable.auto.commit`控制，推荐使用手动提交位移（大部分大数据框架都是禁止自动提交的），因为自动提交下只要consumer一直启动着就会不停向位移主题写入消息（比如这个consumer已经没有消息消费了，但因为自动提交，还是会不停提交相同的位移信息到位移主题）
+
+Kafka使用Compact策略来删除位移主题中的过期消息，避免位移主题无限膨胀，比如位移主题下同一个key的两条消息，发送时间靠前的那条消息就可以被清除
+
+![Kafka的Compact过程](./pics/kafka_compaction.jpeg)
+
+Kafka中有个后台线程Log Cleaner，会定期巡查待Compact的主题，找出满足条件可以删除的消息（如果发现位移主题无限膨胀占用过多磁盘空间，可以检查下Log Cleaner线程的工作状态）
+
 
 
