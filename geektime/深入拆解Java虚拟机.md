@@ -1,8 +1,8 @@
-# JVM
+# 深入拆解Java虚拟机
 
 ## Java基本类型
 
-![Java基本类型](../pics/java_basic_type.png)
+![Java基本类型](./pics/java_basic_type.png)
 
 对于CPU而言其只关心01数据并不关心数据类型，数据类型是编译器提供的能力。比如boolean类型在Java中规定了只有true和false两个值，但在JVM中将boolean类型映射为了int类型，即true为整数1，false为整数0，然后布尔判断也通过整数的比较实现(比如`a == true`即`a == 1`)，因此在编译后的.class文件中几乎看不出boolean类型的痕迹了
 
@@ -142,7 +142,7 @@ Exception table:
 
 finally可以保证在try和catch代码块出现异常后都一定执行finally代码块，其原理也是生成异常表中的一条记录，该记录监控try和catch代码块范围的索引，对任何异常(any)进行捕获然后跳转到异常处理器，即finally代码块进行执行。此外还需要保证正常执行下try和catch代码块后也需要执行finally块，因此Java编译器在编译时会在try代码块和catch代码块下各自复制一份finally代码块，从而保证正常执行下(即顺序执行)也能执行到finally代码块
 
-![try-catch-finally字节码](../pics/try_catch_finally_bytecode.png)
+![try-catch-finally字节码](./pics/try_catch_finally_bytecode.png)
 
 因为catch代码块抛出异常后，在finally代码块中只会抛出catch抛出的异常而丢弃了try代码块中抛出的异常，因此在Java7中引入Suppressed异常来允许抛出的异常可以附带多个异常的信息，但因为finally代码块中并没有来自try代码块中的异常引用，因此就需要在catch代码块中完成异常信息的附带，使用起来非常繁琐
 
@@ -220,8 +220,8 @@ public class GeneratedMethodAccessor1 extends MethodAccessorImpl {
 - 由于Object[]无法存储基本类型，因此需要做自动的拆箱装箱的工作
 - 当调用次数达到阈值后转换为动态实现后，理论上可以通过内联的方式将热点代码内联到`Method.invoke()`处，但因为所有反射的调用都是`Method.invoke()`作为入口，因此在这上面收集到的类型信息十分混乱从而影响内联，使得`Method.invoke()`难以被内联
 
-![关于反射调用方法的一个log](https://www.iteye.com/blog/rednaxelafx-548536)
-![JAVA深入研究——Method的Invoke方法。](https://www.cnblogs.com/onlywujun/p/3519037.html)
+[关于反射调用方法的一个log](https://www.iteye.com/blog/rednaxelafx-548536)
+[JAVA深入研究——Method的Invoke方法。](https://www.cnblogs.com/onlywujun/p/3519037.html)
 
 ## invokedynamic
 

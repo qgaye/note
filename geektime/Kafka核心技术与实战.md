@@ -159,13 +159,13 @@ Consumer Group：Kafka提供的可扩展且具有容错性的消息者机制
 
 ### 位移主题
 
-老版本Kafka将位移信息保存在zookeeper中，当consumer重启后自动从zookeeper中读取位移信息即可，这种设计使得broker不需要保存位移信息，可以减少broker端需要持有的状态空间，有利于实现高伸缩性，但因为zookeeper本身不适用于频繁的写操作，而更新位移信息是高频的操作，这会导致zookeeper集群性能严重下降，因此新版本Kafka中将消费组的位移信息作为一条普通的消息提交到内部主题`_consumer_offsets`中保存
+老版本Kafka将位移信息保存在zookeeper中，当consumer重启后自动从zookeeper中读取位移信息即可，这种设计使得broker不需要保存位移信息，可以减少broker端需要持有的状态空间，有利于实现高伸缩性，但因为zookeeper本身不适用于频繁的写操作，而更新位移信息是高频的操作，这会导致zookeeper集群性能严重下降，因此新版本Kafka中将消费组的位移信息作为一条普通的消息提交到内部主题`__consumer_offsets`中保存
 
 为什么将位移信息写入内部topic：因为位移信息的写入要求可持久化和高吞吐量，而Kafka天然就支持可持久化和高吞吐量，那么自然无需借助外部服务，用Kafka自己解决即可
 
 - 位移主题是一个普通的主题，同样可以被手动创建，修改，删除
 - 位移主题的消息格式是kafka定义的，不可以被手动修改，若修改格式不正确，kafka将会崩溃
-- 位移主题中消息类似于KV结构，key是<Group ID，主题名，分区号>形式的三元组（位移信息其实是针对于消费组的，又因为一个分区只能被消费组下的一个消费者消费，因此位移信息无需包含消费者的标识），value可以理解为offset值
+- 位移主题中消息类似于KV结构，key是`<Group ID，主题名，分区号>`形式的三元组（位移信息其实是针对于消费组的，又因为一个分区只能被消费组下的一个消费者消费，因此位移信息无需包含消费者的标识），value可以理解为offset值
 
 当Kafka集群中的第一个Consumer程序启动时，Kafka会自动创建位移主题（也可以手动创建），分区数依赖于broker端的`offsets.topic.num.partitions`，默认50，副本数依赖于broker端的`offsets.topic.replication.factor`，默认为3
 
@@ -176,6 +176,37 @@ Kafka使用Compact策略来删除位移主题中的过期消息，避免位移�
 ![Kafka的Compact过程](./pics/kafka_compaction.jpeg)
 
 Kafka中有个后台线程Log Cleaner，会定期巡查待Compact的主题，找出满足条件可以删除的消息（如果发现位移主题无限膨胀占用过多磁盘空间，可以检查下Log Cleaner线程的工作状态）
+
+### 重平衡
+
+Rebalance过程中Consumer Group中所有Consumer实例共同参与，在协调者Coordinator帮助下，完成订阅topic的partition的分配
+
+Coordinator（协调者）：其专门为Consumer Group服务，负责为Consumer Group执行rebalance以及提供位移管理和组成员管理等，比如consumer端提交位移其实就是向Coordinator所在的broker提交位移。所有broker启动时都会创建和开启相应的Coordinator组件，也就是所有broker都有各自的Coordinator
+
+Consumer Group如何找到为其服务的Coordinator？
+第一步：将GroupID的哈希值和`__consumer_offsets`主题的分区数取模后的绝对值，此时计算出的就是`__consumer_offsets`中的哪一个分区负责保存该Consumer Group的位移信息
+第二步：找出上一步计算出的分区号所在的分区的Leader副本所在的broker，该broker就是要找的Coordinator
+
+Rebalance存在的问题：
+- rebalance影响consumer端TPS，因为在rebalance期间所有consumer都无法消费消息，还会造成消息积压
+- rebalance很慢，尤其是consumer group下存在很多个consumer时
+- rebalance效率不高，rebalance过程通常不会考虑局部性原理，也就是在rebalance过程中很可能将原本属于某个consumer消费的分区重新分配给其他consumer消费
+
+针对上面这三个问题，Kafka对此无能为力，因此最好的方法就是尽可能避免重平衡
+
+Rebalance发生的三个时机：
+- 消费组内消费者数量发生变化
+- 消费组订阅的主题数量发生变化
+- 消费组订阅的主题的分区数发生变化
+
+而这三个时机大部分其实都是合理的，属于Kafka的高伸缩性的一部分，我们要避免的是那些不必要的Rebalance
+- 避免因consumer未能及时和Coordinator发送心跳导致的rebalance：当consumer group完成rebalance后每个consumer会定期向coordinator发送心跳，表示自己还存活着，如果consumer未能及时和coordinator发送心跳那么coordinator就会将其踢出consumer group，从而导致rebalance，可以通过设置`session.timeout.ms`（consumer和coordinator间超时的时间间隔）和`heartbeat.interval.ms`（心跳发送频率间隔）来避免
+- 避免因consumer消费时间过长导致Rebalance：如果业务处理比较耗时，那就需要将`max.poll.interval.ms`（consumer端两次调用poll方法的最大时间间隔）适当调大些，为业务处理留下足够时间
+- 避免因consumer端频繁GC导致Rebalance：比如consumer端频繁Full GC导致长时间停顿
+
+此外rebalance还可能造成消息重复消费的问题，比如当consumer端poll了其分区下的一条消息进行消费，但还未提交位移信息，此时发生了rebalance，那么在rebalance后一个新的consumer继续负责消费这个分区下的消息，那么那条在旧consumer上未提交位移信息的消息就会被新consumer再次消费（无论自动提交还是手动提交位移信息都无法避免）
+
+
 
 
 
