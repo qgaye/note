@@ -74,7 +74,7 @@ Kafka中压缩和解压缩：producer端压缩，broker端保持，consumer解�
 1. broker和producer指定了不同的压缩算法，此时当broker收到消息后就不得不先解压缩，再用broker端的压缩算法压缩后保存
 2. broker和consumer消息格式不同，为了兼容老版本的格式，broker会对新版本的消息进行转换，这里的转换不但需要解压缩，还使得kafka丧失了zero copy的能力，对性能有很大影响（producer到broker阶段不会使用到zero copy）
 
-在producer到broker后，broker会对压缩过的消息集合进行解压缩操作，目的是进行验证，但毫无以为会对broker端性能造成影响，尤其是CPU
+在producer到broker后，broker会对压缩过的消息集合进行解压缩操作，目的是进行验证，但毫无疑问会对broker端性能造成影响，尤其是CPU
 
 kafka中消息格式分为V1和V2版本，在V1中会对每条信息进行CRC校验，而在V2中则是对消息集合这一层进行CRC校验，性能更佳，此外V1是针对每条消息进行压缩然后保存到消息集合中，而V2则是直接对整个消息集合进行压缩，V2的压缩效果更佳
 
@@ -96,7 +96,7 @@ kafka中读写都是以批(patch)为单位的
 - 确保`replication.factor > min.insync.replicas`，如果两者相等，那么只要有一个副本挂了整个partition都无法正常工作
 - 确保消息消费完再提交，关闭`enable.auto.commit`自动提交，采用手动提交的方式
 
-## TCP连接
+## 生产者TCP连接
 
 何时创建TCP连接：
 1. 在创建KafkaProducer实例后，会在后台创建一个Sender线程，和`bootstrap.servers`参数中配置的broker进行连接
@@ -206,6 +206,171 @@ Rebalance发生的三个时机：
 
 此外rebalance还可能造成消息重复消费的问题，比如当consumer端poll了其分区下的一条消息进行消费，但还未提交位移信息，此时发生了rebalance，那么在rebalance后一个新的consumer继续负责消费这个分区下的消息，那么那条在旧consumer上未提交位移信息的消息就会被新consumer再次消费（无论自动提交还是手动提交位移信息都无法避免）
 
+### 位移提交
+
+consumer会向kafak提交分配给他的每个分区各自的位移数据，这样当consumer发生故障重启后就能从kafka中读取之前提交的位移值，然后从相应的位移处继续消费
+
+注：只要consumer没有重启，其就不会依赖提交的位移值，因为consumer在运行过程中会记录已获取的消息位移，从而保证只要consumer没有重启就不会重复消费
+
+位移提交分为自动提交和手动提交
+
+自动提交：`enable.auto.commit`设置为true时consumer就会自动提交，在每`auto.commit.interval.ms`时间间隔后自动提交位移，此外还会保证的是在调用poll方法时提交上一次poll返回的消息位移，因此其不能保证已消费的位移一定提交到kafka，当在`auto.commit.interval.ms`期间发生重平衡，重平衡后consumer从上一次提交的位移处继续消费，此时就会发生重复消费的问题
+
+手动提交：
+- `commitSycn()`：同步调用，程序会被阻塞直到broker返回提交结果，会降低程序的TPS
+- `commitAsync()`：异步调用，不会阻塞程序，`commitAsync()`出现异常时不能重试，因为其是异步的，假如提交失败后重试的值很可能不是最新的值了，会导致覆盖了最新的位移值
+
+`commitSync()`和`commitAsync()`需要组合使用，对于阶段性提交使用异步提交，当consumer要关闭时使用同步提交确保能够正确提交位移值
+
+```java
+try {
+    while (true) {
+        ConsumerRecords records = consumer.poll(Duration.ofSeconds(1));
+        process(records);   // 处理消息
+        commitAsync();
+    }
+} catch (Exception e) {
+    handle(e);
+} finally {
+    try {
+        consumer.commitSync();
+    } finally {
+        consumer.close();
+    }
+}
+```
+
+此外还可以通过`commitSync/commitAsync(Map<TopicPartiton, OffsetAndMetadata>)`指定分区和对应的位移值进行提交，这样就可以随时提交位移信息，而不再受poll拉取的消息数量限制了
+
+### CommitFailedException
+
+`max.poll.interval.ms`指的是两次poll间的最大时间间隔，当poll后数据处理时间超过`max.poll.interval.ms`后kafka就会认为该consumer掉线了，会将其剔除然后进行重平衡，此时原来的consumer就无法提交位移信息，抛出`CommitFailedException`，因为原先分配给它的分区已经被分配给别的了（只有手动提交会显式抛出`CommitFailedException`，自动提交抛出的异常由kafka内部处理了）
+
+避免抛出`CommitFailedException`的方法：
+- 缩短单条消息处理时间，使得每次poll的数据都能在`max.poll.interval.ms`中处理完成
+- 增加`max.poll.interval.ms`值
+- 减少consumer每次poll的消息条数
+- consumer中通过多线程来加速消费，多数主流的大数据框架都是用的该方法，但实现复杂且容易出错
+
+此外，当同时出现了设置了相同group.id值的消费者组和独立消费者，那么当独立消费者手动提交位移时，kafka也会抛出`CommitFailedException`（独立消费者也需要group.id进行提交位移）
+
+### 消费者多线程消费
+
+方案一：消费者程序启动多个线程，每个线程维护单独的一个KafkaConsumer实例，负责完整的消息获取、消息处理流程
+
+方案二：消费者程序使用单或多线程获取消息，同时创建多个线程执行具体的消息处理
+
+![优缺点对比](./pics/multi_thread_consume.webp)
+
+### 消费者TCP连接
+
+创建时机：在调用`KafakConsumer.poll()`是被创建，在poll内部有3个时机可以创建TCP连接
+- 发起FindCoordinator请求时，消费者请求任意一个broker询问其coordinator在哪个broker上
+- 连接coordinator时
+- 消费数据时，和该消费者被分配到的分区所在的所有broker进行连接
+
+创建个数：
+1. FindCoordinator请求，这是消费者创建的第一个连接，因为此时还不知道kafka集群的元数据，因此请求的brokerId为-1，然后通过该连接获取到集群元数据，然后就会被废弃，因为这个连接连接的是brokerId=-1，因此也就不能复用
+2. 和其coordinator创建的连接
+3. 和被分配到的分区所在的所有broker创建连接
+
+何时关闭：
+- 手动调用`KafkaConsumer.close()`或执行kill命令
+- 超过`connection.max.idle.ms`后由Kafka自动关闭，但该值可能被设置成-1表示禁用定时关闭，就会导致消费者创建的第一个连接无法被关闭，成为永久的僵尸连接
+
+### 监控消费进度
+
+Lag：消费者当前滞后于生产者的消息条数，Kafka监控分区上的Lag，最后汇总到topic纬度上
+Lead：消费者最新的消费消息的位移和分区当前最早一条消息位移的差值
+
+Lag过大会导致消费者消费的消息已经不在操作系统的缓存页中，此时消费者就不得不从磁盘上读取消息，这会进一步拉大消费者和生产者之间的差距
+Lead过小表示消费者可能要丢消息了，因为kafka中消息是有留存时间的，kafka会默认删除某一时间前的数据，当Lead接近0时，就说明此时消费者可能消费的数据即将被kafka删除，当要消费的消息被删除后会导致消费者程序重新调整位移，即可能消费者从头再消费一遍数据或直接从最新的消息位移处开始消费
+
+监控方式：
+- kafka-consumer-groups脚本
+- Kafka Java Consumer API
+- Kafka自带的JMX监控指标
+
+## 副本
+
+副本的好处：
+- 提供数据冗余：提高整体可用性以及数据持久性
+- 提供高伸缩性：支持横向扩展，通过增加机器以提高读吞吐量
+- 改善数据局部性：将数据放到离用户地理位置相近的地方，从而降低时延
+
+Kafka中的副本本质是一个只能追加写消息的提交日志，其只带来了数据冗余的好处
+
+Kafka中副本分为领导者副本（Leader Replica）和追随者副本（Follower Replica），每个分区在创建时会选举出一个领导者副本，其余自动成为追随者副本
+
+Kafka中追随者副本是不对外提供服务的，所有读写请求都需要发往领导者副本做在的broker，追随者副本唯一的任务就是从领导者副本异步拉取消息
+追随者副本不对外提供服务的好处：
+- 保证消费者可以消费到最新写入的数据
+- 保证单调读，也就是消费不同的副本导致消费到的数据不一致
+
+ISR（In-sync Replicas）：当追随者副本落后于领导者副本时间间隔大于`replica.lag.time.max.ms`后，该副本就会被从ISR副本集合中删除，也就是认为该副本不能和领导者副本正常同步。其中，领导者副本必然在ISR副本集合中，当追随者副本赶上进度后也可以再次被加入到ISR副本集合中
+
+Unclean领导者选举（Unclean Leader Election）：允许选举不在ISR集合中的副本作为领导者副本，但因为不再ISR集合中的副本表明已经落后领导者副本很多了，选举其作为领导者就会造成数据丢失，但保证了服务的高可用性，但不建议开启，因为高可用可以通过添加副本数实现，而这会造成数据不一致
+
+## 重平衡
+
+重平衡的通知是通过心跳线程来完成的，当协调者决定开启新一轮重平衡后，会将`REBALANCE_IN_PROGRESS`封装进心跳请求的响应中
+
+![消费组状态流转](./pics/kafka_consumer_group_status.webp)
+
+消费组启动时的状态流转：消费组最开始是Empty状态，当重平衡开启后，它会被置于PreparingRebalance状态等待成员加入，之后变更到CompletingRebalance状态等待分配消费方案，最后流转到Stable完成重平衡
+
+当成员加入或退出消费组时：消费组从Stable变为PreparingRebalance状态，此时所有现存成员就必须重新申请加入组
+
+消费者端重平衡流程：
+- JoinGroup请求：当成员加入组时，会向协调者发送JoinGroup请求，在该请求中会将自己订阅的主题上报，当协调者收集了全部成员的JoinGroup请求后，协调者会从中选择一个担当这个消费者组的领导者
+- SyncGroup请求：领导者向协调者发送SyncGroup请求，将其做出的分配方案发给协调者，其他成员也会向协调者发送SyncGroup请求，但请求体中没有实际内容，然后协调者统一以SyncGroup响应方式将分配方案发送给所有成员，这样成员就都知道自己该消费哪些分区了
+
+消费者的领导者不同于领导者副本，其作用是负责收集所有成员的订阅信息，然后制定具体分区的消费分配方案（分配方案就是哪个消费者消费该topic下的哪个分区）
+
+Broker端重平衡流程：
+- 新成员入组：新成员发送JoinGroup请求，协调者收到后向组内成员通过心跳响应返回要求重平衡
+- 成员主动离组：离组成员发送LeaveGroup请求，协调者收到后要求组内其他成员进行重平衡
+- 成员崩溃离组：协调者在收到心跳后会根据`session.timeout.ms`算出下次deadline时间，超过该时间就认定该成员崩溃，要求组内其他成员进行重平衡
+- 重平衡时提交位移：重平衡时协调者会给予成员一段缓冲时间，要求成员在这段时间内快速上报自己的位移信息，然后开启JoinGroup/SyncGroup请求进行重平衡
+
+## 控制器
+
+控制器主要是在ZooKeeper帮助下管理和协调整个Kafka集群
+
+在Broker启动时会去ZooKeeper中创建`/controller`节点，第一个成功创建`/controller`节点的Broker会被指定为控制器
+
+控制器的作用：
+- 主题管理以及分区管理
+- 分区重分配
+- Preferred领导者选举，主要更换Leader以避免部分Broker负载过重
+- 集群成员管理（Broker新增关闭和宕机），通过watch机制检查ZooKeeper的`/brokers/ids`节点下
+- 向其他Broker提供数据服务，在控制器上保存了最全的集群元数据信息，其他Broker会定期接受控制器发来的元数据更新请求，从而更新其内存中的缓存数据。控制器保存了所有主题信息、所有Broker信息、所有运维任务信息（这些数据在ZooKeeper中也保存了一份，当控制器初始化时都会从ZooKeeper中读取对应元数据保存到缓存中）
+
+控制器故障转移（Failover）：当控制器突然宕机，其他Broker通过watch机制感知到ZooKeeper上的`/controller`临时节点被删除了，于是所有存活的Broker开始竞争向ZooKeeper创建`/controller`节点，创建成功的就是新控制器（此时`/controller`节点epoch会+1，防止宕机的控制器因恢复导致同时存在两个控制器，即脑裂问题）
+
+## 高水位
+
+HW（高水位）：高水位之前的所有消息都是可以被消费的
+LEO（Log End Offset）：副本写入下一条消息的位移值
+
+Leader副本中会保存自身HW和LEO，以及所有Follower副本的LEO
+Follower副本会保存自身HW和LEO
+
+Leader副本：
+- 处理生产者请求：消息写入磁盘，计算HW = max(HW, min(Leader副本保存的所有远程副本的LEO))
+- 处理Follower副本拉取消息请求：读取消息返回，将Follower副本请求的位移值更新到远程副本LEO值，并计算HW
+
+Follower副本：
+- 处理从Leader拉取的消息：消息写入磁盘，更新LEO，计算HW = min(LEO, Leader副本发送的其HW)
+
+可以看到，Leader副本更新远程副本LEO值是有延迟的，必须在Follower副本下一次拉取请求时才能更新LEO值，因此Leader副本的HW和Follower副本的HW的更新时间上是存在错配的，错配也就是导致数据丢失和不一致的根源
+
+Leader Epoch：`<ephoch, offset>`
+- epoch：单调递增的版本号，当领导者副本变更时会增加该版本号
+- offset：Leader副本在该Epoch值上写入的首条消息位移，并会随着消息不断写入而更新该值
+当副本恢复时，向Leader副本请求自己原先的ephoch值对应的offset，然后针对该offset进行截断，然后再向Leader副本进行数据同步，从而解决数据不一致性问题
+
+日志截断：因为Broker崩溃前可能写入部分不完整的消息，因此恢复后需要执行截断操作，恢复的副本会向Leader副本请求Leader的LEO，如果自己的LEO小于Leader的LEO就不需要截断，反之就需要截断
 
 
 
