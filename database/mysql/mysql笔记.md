@@ -1304,7 +1304,7 @@ InnoDB内存管理使用的是改进过的LRU算法，本质就是将数据分�
 
 ![InnoDB中的LRU算法](../pics/mysql_innodb_lru.png)
 
-在InnoDB的实现中，按照5:3的比例把整个LRU链表分成了young区域和old区域，head处在young区域，tail处在old区域
+在InnoDB的实现中，按照5:3的比例把整个LRU链表分成了young区域和old区域，head处在young区域，tail处在old区域（young表示越是最近访问的）
 
 - 当访问处在young区域中的数据时，将其移到链表的head
 - 当访问处在old区域中的数据时
